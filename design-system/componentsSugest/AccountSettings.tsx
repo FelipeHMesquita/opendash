@@ -2,6 +2,7 @@ import * as React from "react"
 import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export function AccountSettings() {
@@ -10,7 +11,7 @@ export function AccountSettings() {
 
             {/* Top Navigation & Search */}
             <header className="border-b border-border px-8 py-4 shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10">
-                <div className="flex max-w-5xl flex-col gap-6">
+                <div className="flex flex-col gap-6">
                     <div className="relative w-full max-w-md text-muted-foreground focus-within:text-foreground transition-colors">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                         <Input
@@ -37,13 +38,13 @@ export function AccountSettings() {
                     {/* Section: Personal Information */}
                     <section className="grid grid-cols-1 gap-8 border-b border-border pb-12 md:grid-cols-3">
                         <div className="col-span-1">
-                            <h2 className="text-lg font-semibold">Personal Information</h2>
+                            <h2 className="text-base/7 font-semibold text-foreground">Personal Information</h2>
                             <p className="mt-1 text-sm text-muted-foreground leading-relaxed pr-4">
                                 Use a permanent address where you can receive mail.
                             </p>
                         </div>
 
-                        <div className="col-span-2 space-y-6 max-w-2xl">
+                        <div className="col-span-2 space-y-6">
                             {/* Avatar Row */}
                             <div className="flex items-center gap-6">
                                 <Avatar className="h-16 w-16 rounded-md">
@@ -61,27 +62,28 @@ export function AccountSettings() {
                             {/* Name Row */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-foreground">First name</label>
-                                    <Input className="border-border bg-card text-foreground focus-visible:ring-primary" />
+                                    <Label htmlFor="first-name">First name</Label>
+                                    <Input id="first-name" className="border-border bg-card" />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-foreground">Last name</label>
-                                    <Input className="border-border bg-card text-foreground focus-visible:ring-primary" />
+                                    <Label htmlFor="last-name">Last name</Label>
+                                    <Input id="last-name" className="border-border bg-card" />
                                 </div>
                             </div>
 
                             {/* Email */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Email address</label>
-                                <Input className="border-border bg-card text-foreground focus-visible:ring-primary" />
+                                <Label htmlFor="email">Email address</Label>
+                                <Input id="email" className="border-border bg-card" />
                             </div>
 
                             {/* Username */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Username</label>
-                                <div className="flex rounded-md border border-border bg-card focus-within:ring-1 focus-within:ring-primary transition-all shadow-sm">
-                                    <span className="flex items-center px-3 text-sm text-muted-foreground border-r border-border bg-muted/30">example.com/</span>
+                                <Label htmlFor="username">Username</Label>
+                                <div className="flex rounded-md border border-border bg-card focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background transition-colors">
+                                    <span className="flex items-center px-3 text-sm text-muted-foreground border-r border-border bg-muted">example.com/</span>
                                     <input
+                                        id="username"
                                         type="text"
                                         placeholder="janesmith"
                                         className="flex-1 bg-transparent py-2 px-3 text-sm text-foreground focus:outline-none placeholder:text-muted-foreground/40"
@@ -89,11 +91,14 @@ export function AccountSettings() {
                                 </div>
                             </div>
 
-                            {/* Timezone (Mocked Select for simplicity) */}
+                            {/* Timezone */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Timezone</label>
+                                <Label htmlFor="timezone">Timezone</Label>
                                 <div className="relative">
-                                    <select className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary appearance-none transition-all">
+                                    <select
+                                        id="timezone"
+                                        className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background appearance-none transition-colors"
+                                    >
                                         <option>Pacific Standard Time</option>
                                         <option>Eastern Standard Time</option>
                                         <option>Greenwich Mean Time</option>
@@ -105,7 +110,7 @@ export function AccountSettings() {
                             </div>
 
                             <div className="pt-2">
-                                <Button className="font-semibold px-6 transition-all hover:scale-[1.02] active:scale-[0.98]">Save</Button>
+                                <Button className="px-6">Save</Button>
                             </div>
                         </div>
                     </section>
@@ -113,28 +118,28 @@ export function AccountSettings() {
                     {/* Section: Change Password */}
                     <section className="grid grid-cols-1 gap-8 border-b border-border pb-12 md:grid-cols-3">
                         <div className="col-span-1">
-                            <h2 className="text-lg font-semibold">Change password</h2>
+                            <h2 className="text-base/7 font-semibold text-foreground">Change password</h2>
                             <p className="mt-1 text-sm text-muted-foreground leading-relaxed pr-4">
                                 Update your password associated with your account.
                             </p>
                         </div>
 
-                        <div className="col-span-2 space-y-6 max-w-2xl">
+                        <div className="col-span-2 space-y-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Current password</label>
-                                <Input type="password" className="border-border bg-card text-foreground focus-visible:ring-primary" />
+                                <Label htmlFor="current-password">Current password</Label>
+                                <Input id="current-password" type="password" className="border-border bg-card" />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">New password</label>
-                                <Input type="password" className="border-border bg-card text-foreground focus-visible:ring-primary" />
+                                <Label htmlFor="new-password">New password</Label>
+                                <Input id="new-password" type="password" className="border-border bg-card" />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Confirm password</label>
-                                <Input type="password" className="border-border bg-card text-foreground focus-visible:ring-primary" />
+                                <Label htmlFor="confirm-password">Confirm password</Label>
+                                <Input id="confirm-password" type="password" className="border-border bg-card" />
                             </div>
 
                             <div className="pt-2">
-                                <Button className="font-semibold px-6 transition-all hover:scale-[1.02] active:scale-[0.98]">Save</Button>
+                                <Button className="px-6">Save</Button>
                             </div>
                         </div>
                     </section>
@@ -142,20 +147,20 @@ export function AccountSettings() {
                     {/* Section: Log out other sessions */}
                     <section className="grid grid-cols-1 gap-8 border-b border-border pb-12 md:grid-cols-3">
                         <div className="col-span-1">
-                            <h2 className="text-lg font-semibold">Log out other sessions</h2>
+                            <h2 className="text-base/7 font-semibold text-foreground">Log out other sessions</h2>
                             <p className="mt-1 text-sm text-muted-foreground leading-relaxed pr-4">
                                 Please enter your password to confirm you would like to log out of your other sessions across all of your devices.
                             </p>
                         </div>
 
-                        <div className="col-span-2 space-y-6 max-w-2xl">
+                        <div className="col-span-2 space-y-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Your password</label>
-                                <Input type="password" className="border-border bg-card text-foreground focus-visible:ring-primary" />
+                                <Label htmlFor="session-password">Your password</Label>
+                                <Input id="session-password" type="password" className="border-border bg-card" />
                             </div>
 
                             <div className="pt-2">
-                                <Button className="font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]">Log out other sessions</Button>
+                                <Button>Log out other sessions</Button>
                             </div>
                         </div>
                     </section>
@@ -163,14 +168,14 @@ export function AccountSettings() {
                     {/* Section: Delete account */}
                     <section className="grid grid-cols-1 gap-8 pb-12 md:grid-cols-3">
                         <div className="col-span-1">
-                            <h2 className="text-lg font-semibold text-destructive">Delete account</h2>
+                            <h2 className="text-base/7 font-semibold text-destructive">Delete account</h2>
                             <p className="mt-1 text-sm text-muted-foreground leading-relaxed pr-4">
                                 No longer want to use our service? You can delete your account here. This action is not reversible. All information related to this account will be deleted permanently.
                             </p>
                         </div>
 
-                        <div className="col-span-2 flex items-start max-w-2xl">
-                            <Button variant="destructive" className="font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]">
+                        <div className="col-span-2 flex items-start">
+                            <Button variant="destructive">
                                 Yes, delete my account
                             </Button>
                         </div>

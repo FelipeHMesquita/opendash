@@ -1,13 +1,6 @@
 import * as React from "react"
 import { Switch } from "@/components/ui/switch"
-import {
-    UserCircle,
-    Fingerprint,
-    Bell,
-    Package,
-    CreditCard,
-    Users
-} from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export function GeneralSettings() {
     return (
@@ -15,12 +8,12 @@ export function GeneralSettings() {
 
             {/* Main Content - Full Width Scrollable */}
             <main className="flex-1 px-8 py-12 lg:px-16 overflow-y-auto">
-                <div className="max-w-3xl mx-auto space-y-16 pb-24">
+                <div className="space-y-16 pb-24">
 
                     {/* Profile Section */}
                     <section>
                         <div className="mb-6">
-                            <h2 className="text-xl font-semibold">Profile</h2>
+                            <h2 className="text-base/7 font-semibold text-foreground">Profile</h2>
                             <p className="mt-1 text-sm text-muted-foreground">
                                 This information will be displayed publicly so be careful what you share.
                             </p>
@@ -35,7 +28,7 @@ export function GeneralSettings() {
                     {/* Bank Accounts Section */}
                     <section>
                         <div className="mb-6">
-                            <h2 className="text-xl font-semibold">Bank accounts</h2>
+                            <h2 className="text-base/7 font-semibold text-foreground">Bank accounts</h2>
                             <p className="mt-1 text-sm text-muted-foreground">
                                 Connect bank accounts to your account.
                             </p>
@@ -44,15 +37,15 @@ export function GeneralSettings() {
                             <SettingsRow label="TD Canada Trust" value="" />
                             <SettingsRow label="Royal Bank of Canada" value="" isLast />
                         </div>
-                        <button className="mt-6 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+                        <Button variant="link" className="mt-6 h-auto p-0 text-sm font-semibold">
                             + Add another bank
-                        </button>
+                        </Button>
                     </section>
 
                     {/* Integrations Section */}
                     <section>
                         <div className="mb-6">
-                            <h2 className="text-xl font-semibold">Integrations</h2>
+                            <h2 className="text-base/7 font-semibold text-foreground">Integrations</h2>
                             <p className="mt-1 text-sm text-muted-foreground">
                                 Connect applications to your account.
                             </p>
@@ -60,15 +53,15 @@ export function GeneralSettings() {
                         <div className="space-y-0">
                             <SettingsRow label="QuickBooks" value="" isLast />
                         </div>
-                        <button className="mt-6 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+                        <Button variant="link" className="mt-6 h-auto p-0 text-sm font-semibold">
                             + Add another application
-                        </button>
+                        </Button>
                     </section>
 
                     {/* Language and Dates Section */}
                     <section>
                         <div className="mb-6">
-                            <h2 className="text-xl font-semibold">Language and dates</h2>
+                            <h2 className="text-base/7 font-semibold text-foreground">Language and dates</h2>
                             <p className="mt-1 text-sm text-muted-foreground">
                                 Choose what language and date format to use throughout your account.
                             </p>
@@ -110,9 +103,9 @@ function SettingsRow({
             <span className="text-sm font-medium text-muted-foreground sm:w-1/3">{label}</span>
             <span className="mt-1 text-sm text-foreground sm:mt-0 sm:w-1/3">{value}</span>
             <div className="mt-2 sm:mt-0 sm:w-1/3 sm:text-right">
-                <button className="text-sm font-semibold text-primary hover:text-primary/80 hover:underline transition-colors">
+                <Button variant="link" className="h-auto p-0 text-sm font-semibold">
                     Update
-                </button>
+                </Button>
             </div>
         </div>
     )

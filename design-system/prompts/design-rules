@@ -1,0 +1,545 @@
+# Design Rules — Superfícies, Espaçamento e Tipografia
+
+> **Premissa:** Este sistema é otimizado para interfaces **dark theme**.
+> Cor, opacidade e contraste são definidos no arquivo `colorCombination`.
+> Este arquivo trata exclusivamente de **onde** e **como** o conteúdo se organiza.
+
+---
+
+## 1. Layout Responsivo e Grid
+
+### Princípio: container fluido, componente com limite próprio
+
+O `max-width` nunca deve viver na página — deve viver no **componente**. Um container com max-width diferente entre views faz o conteúdo "saltar" ao navegar, mesmo que cada tela individualmente pareça correta. A solução é um container sempre fluido e cada tipo de conteúdo controlando seu próprio limite:
+
+```
+✓  Container fluido + componente com max-w próprio
+✗  max-w diferente por página
+✗  max-w único no container que restringe tabelas desnecessariamente
+```
+
+### Comportamento por breakpoint
+
+```
+Mobile  (< 768px)    → sidebar oculta, conteúdo full-width, nav em bottom bar
+Tablet  (768–1024px) → sidebar colapsada (só ícones), conteúdo full-width
+Desktop (1024–1440px)→ sidebar expandida fixa + conteúdo fluido
+Wide    (> 1440px)   → sidebar fixa + grid limita colunas máximas
+```
+
+### Os três tipos de grid em um SaaS
+
+**Grid de layout — sidebar + conteúdo**
+```
+grid grid-cols-[240px_1fr]
+→ sidebar fixa de 240px, conteúdo preenche o resto em qualquer tela
+```
+
+**Grid de cards de métrica — colunas fixas com número máximo**
+```
+grid-cols-1 sm:grid-cols-2 lg:grid-cols-4
+→ nunca mais que 4 colunas, independente da largura da tela
+```
+
+**Grid de conteúdo principal — fluido**
+```
+w-full
+→ tabela, lista, formulário longo — ocupam todo o espaço disponível
+→ mais tela = mais dados visíveis, sempre benéfico
+```
+
+### O grid como substituto do max-width
+
+O grid permite que cada tipo de conteúdo defina seu próprio limite sem forçar uma restrição global:
+
+| Tipo de conteúdo          | Comportamento                                      |
+|---------------------------|----------------------------------------------------|
+| Cards de métrica          | `grid-cols-4` — número máximo de colunas           |
+| Tabelas e listas          | `w-full` — fluido, mais largura = mais dados       |
+| Campos de formulário      | `max-w-sm` / `max-w-md` no próprio input           |
+| Texto corrido / leitura   | `max-w-prose` no bloco de texto                    |
+
+```
+Card   → grid controla o limite
+Tabela → fluida, sem limite
+Input  → max-w no próprio campo, não no container
+```
+
+---
+
+## 2. Superfícies de uma Interface SaaS
+
+Superfícies são os planos onde o conteúdo vive. Cada uma tem uma função específica e comporta um conjunto definido de tipografia e espaçamento. Os valores de cor de cada superfície são definidos no `colorCombination`.
+
+### Estruturais — sempre presentes
+
+```
+background      → o chão, tudo assenta sobre ele
+sidebar         → painel lateral de navegação
+header / topbar → barra superior fixa
+```
+
+### De conteúdo — onde os dados vivem
+
+```
+card            → container de seção, métrica, widget
+table           → fundo das linhas de tabela
+table-header    → fundo do cabeçalho (geralmente igual ao card ou muted)
+input           → campos de formulário
+```
+
+### Flutuantes — acima do fluxo normal
+
+```
+popover         → dropdowns, tooltips com fundo próprio
+dialog / modal  → overlay de conteúdo
+drawer          → painel lateral deslizante
+toast           → notificação temporária
+```
+
+### De estado — variações contextuais
+
+```
+muted           → seções desabilitadas, placeholders, backgrounds de código
+accent          → hover, active state, item selecionado na sidebar
+highlight       → linha de tabela em hover
+```
+
+### O que não é superfície mas precisa estar mapeado junto
+
+```
+overlay         → fundo escurecido atrás de modais (não é cor, é opacidade)
+scrollbar       → thumb e track, derivados do muted
+skeleton        → animação de loading (mesma cor do muted)
+```
+
+### Prioridade de mapeamento
+
+| Prioridade | Superfície   | Motivo                                   |
+|------------|--------------|------------------------------------------|
+| 1          | `background` | âncora de tudo                           |
+| 2          | `card`       | onde 80% do conteúdo vive                |
+| 3          | `sidebar`    | presente em toda sessão                  |
+| 4          | `input`      | formulários são críticos em SaaS         |
+| 5          | `popover`    | dropdowns e menus flutuantes             |
+| 6          | `muted`      | estados desabilitados e placeholders     |
+| 7          | `dialog`     | confirmações, criação de recursos        |
+| 8          | `accent`     | feedback de hover e seleção              |
+
+`header`, `drawer`, `toast` e `table-header` vêm depois — geralmente derivam de superfícies já definidas sem precisar de valores novos.
+
+---
+
+## 2. Sistema de Espaçamento
+
+Todos os valores seguem estritamente o ritmo de **4px** (múltiplos de 4).
+
+### Macro — Grandes Separações
+
+| Classe  | Valor | Uso                                                                          |
+|---------|-------|------------------------------------------------------------------------------|
+| `mt-16` | 64px  | Separação forte entre seções principais da página                            |
+| `mt-10` | 40px  | Separação entre grupos de elementos relacionados, mas distintos              |
+
+### Meso — Layout de Componentes
+
+| Classe              | Valor | Uso                                                                      |
+|---------------------|-------|--------------------------------------------------------------------------|
+| `gap-8` / `gap-y-8` | 32px  | Espaçamento padrão entre componentes em grid (ex: entre stat cards)      |
+| `p-6` / `px-6`      | 24px  | Padding principal para o conteúdo interno de componentes maiores         |
+| `gap-x-6`           | 24px  | Espaçamento entre elementos de ação em um cabeçalho                      |
+| `mt-6`              | 24px  | Margem entre o título de uma seção e seu conteúdo                        |
+
+### Micro — Ajustes Finos
+
+| Classe          | Valor | Uso                                                        |
+|-----------------|-------|------------------------------------------------------------|
+| `gap-x-4`       | 16px  | Espaçamento padrão entre ícone/avatar e seu texto adjacente|
+| `py-5`          | 20px  | Padding vertical para linhas de conteúdo denso             |
+| `py-4`          | 16px  | Padding vertical para cabeçalhos de tabela                 |
+| `px-3`          | 12px  | Padding horizontal para células de tabela e inputs         |
+| `px-2` / `py-2` | 8px   | Padding padrão para itens de navegação, botões e inputs    |
+| `space-y-1`     | 4px   | Espaçamento mínimo entre itens de lista vertical           |
+
+---
+
+## 3. Tipografia
+
+A âncora do sistema é o **corpo** (`text-sm/6`, 14px) — onde 80% do texto de interface vive. Os demais tamanhos são derivados por **função**, não por escala arbitrária.
+
+### Classificação por Função
+
+| Função       | Tailwind         | Tamanho / Linha | Peso            | Uso                                        |
+|--------------|------------------|-----------------|-----------------|--------------------------------------------|
+| `metric`     | `text-3xl/8`     | 30px / 32px     | `font-semibold` | Valores de KPI, números de destaque absoluto |
+| `page-title` | `text-lg/7`      | 18px / 28px     | `font-semibold` | Título principal da página, uma vez por view |
+| `section`    | `text-base/7`    | 16px / 28px     | `font-semibold` | Título de card, grupo ou seção             |
+| `body`       | `text-sm/6`      | 14px / 24px     | `font-normal`   | Texto corrido, descrições, conteúdo de leitura |
+| `label`      | `text-sm/6`      | 14px / 24px     | `font-medium`   | Rótulos de form, cabeçalho de tabela, nav item |
+| `caption`    | `text-xs/6`      | 12px / 24px     | `font-medium`   | Metadados, timestamps, helper text         |
+| `badge`      | `text-xs/4`      | 12px / 16px     | `font-medium`   | Tags, status, chips — altura mínima importa |
+
+> **Body vs Label:** mesmo `text-sm/6`, peso diferente. A interface não grita hierarquia com tamanho — usa peso. `font-normal` recua, `font-medium` avança.
+
+> **Caption vs Badge:** mesmo `text-xs`, line-height diferente. `/6` para leitura confortável, `/4` para elementos compactos onde a altura importa.
+
+### Tipografia por Superfície
+
+Quanto mais flutuante a superfície, menos hierarquia tipográfica ela comporta.
+
+| Superfície       | Funções permitidas                              | Observação                                      |
+|------------------|-------------------------------------------------|-------------------------------------------------|
+| `background`     | `metric`, `page-title`, `body`                  | Maior espaço, maior hierarquia                  |
+| `card`           | `section`, `body`, `label`, `caption`           | Hierarquia completa dentro do card              |
+| `sidebar`        | `label`, `caption`                              | Compacto, sem títulos — só navegação            |
+| `header`         | `section`, `label`                              | Título da view atual + ações                    |
+| `table`          | `label`, `body`, `caption`                      | `label` no header, `body` nos dados, `caption` em meta |
+| `input`          | `body`, `caption`                               | `body` no valor, `caption` no helper text       |
+| `popover`        | `label`, `caption`                              | Sem títulos — só opções e descrições            |
+| `dialog`         | `section`, `body`, `label`                      | Hierarquia própria reduzida: título + corpo + ação |
+| `toast`          | `caption`                                       | Uma linha só, máximo de compressão              |
+
+### Pesos Tipográficos
+
+| Peso            | Uso                                               |
+|-----------------|---------------------------------------------------|
+| `font-semibold` | Títulos, valores em destaque, itens ativos        |
+| `font-medium`   | Labels, captions, links inativos                  |
+| `font-normal`   | Texto corrido, descrições, conteúdo de leitura    |
+
+---
+
+## 4. Estilos de Componentes
+
+### Bordas Arredondadas
+
+O raio não é uma questão de gosto — segue duas regras geométricas.
+
+**Regra 1 — Raio proporcional ao elemento**
+
+O raio deve ser proporcional ao tamanho do elemento, não um valor absoluto fixo. O mesmo 8px em um card de 300px é sutil; em um badge de 20px vira quase um pill e muda o caráter visual. Por isso a escala é por categoria:
+
+| Classe         | Valor  | Categoria                                         |
+|----------------|--------|---------------------------------------------------|
+| `rounded-lg`   | 8px    | Contêineres (cards, painéis, modais)              |
+| `rounded-md`   | 6px    | Interativos médios (botões, inputs, selects)      |
+| `rounded`      | 4px    | Elementos internos aninhados em contêineres       |
+| `rounded-full` | 9999px | Circulares — avatares e ícones solo               |
+| `rounded-none` | 0px    | Elementos planos — linhas de tabela, divisores    |
+
+**Regra 2 — Raios concêntricos**
+
+Quando elementos são aninhados, o raio interno deve ser sempre **menor** que o raio externo. Raios iguais em elementos aninhados parecem desalinhados — o olho percebe mesmo sem nomear o problema.
+
+```
+Card (rounded-lg = 8px)
+└── padding: 16px
+    └── Botão          → rounded-md (6px)   ✓
+    └── Botão          → rounded-lg (8px)   ✗ — raio igual ao contêiner
+
+Card (rounded-lg = 8px)
+└── padding: 4px
+    └── Elemento interno → rounded (4px)    ✓ — quase sem raio
+```
+
+Fórmula aproximada: `raio interno ≈ raio externo − (padding / 2)`. Na prática: sempre um nível abaixo na escala.
+
+**`rounded-full` é semântico**
+
+Reservado para elementos que representam "uma entidade" — avatar, indicador de status, ícone solo. Usar `rounded-full` em um botão de texto longo transforma-o em pill, que tem leitura diferente de um botão convencional. Só use quando a forma circular é intencional.
+
+**Resumo da lógica:**
+```
+1. Contêiner maior       → rounded-lg
+2. Elemento interativo   → rounded-md (um nível abaixo do contêiner)
+3. Elemento aninhado     → rounded (um nível abaixo do interativo)
+4. Avatar / ícone solo   → rounded-full
+5. Linha de tabela       → rounded-none
+```
+
+### Divisores
+
+Divisor e espaço fazem o mesmo trabalho — **nunca os dois juntos**. A escolha entre eles é determinada pela densidade do conteúdo:
+
+```
+Lista com gap-4 entre itens  → sem divisor  (espaço já separa)
+Linha de tabela com py-5     → com divisor  (densa, espaço sozinho não basta)
+```
+
+**Divisores seguem a mesma lógica das bordas — sempre por opacidade.**
+
+Nunca uma cor sólida. O divisor precisa funcionar sobre qualquer superfície sem recalcular:
+
+```
+Dark  → divide-white/5
+Light → divide-black/5
+```
+
+**`divide-*` vs `border-b`**
+
+`border-b` em todos os itens cria borda dupla nas junções e borda órfã no último elemento. `divide-*` aplica a borda apenas *entre* elementos — nunca antes do primeiro, nunca depois do último. É sempre o comportamento correto para listas e tabelas.
+
+```
+✓  divide-y divide-white/5   → borda só entre itens
+✗  border-b em cada item     → borda dupla nas junções + borda órfã no final
+```
+
+---
+
+## 5. Estados de Componentes
+
+Todos os estados usam variáveis já definidas no sistema — nenhum valor novo é inventado.
+
+### Hover
+
+Fundo muda para a superfície `accent` (`+0.12 L` do background). Em Tailwind: `hover:bg-white/5`. Texto e ícone **nunca mudam** no hover — só o fundo. Transição de `150ms ease` em todos os elementos interativos.
+
+```
+hover:bg-white/5
+transition-colors duration-150
+```
+
+### Focus
+
+Ring de `2px` na cor `primary`, com offset de `2px` na cor do `background` para criar separação visual entre o ring e o elemento. Aplicado **apenas em `focus-visible`** — não aparece no clique com mouse, só na navegação por teclado.
+
+```
+focus-visible:ring-2
+focus-visible:ring-primary
+focus-visible:ring-offset-2
+focus-visible:ring-offset-background
+focus-visible:outline-none
+```
+
+### Disabled
+
+Opacidade `50%` + cursor proibido + sem interatividade. A opacidade funciona em qualquer tema sem recalcular cor. Nenhum estado de hover ou focus deve ser aplicado.
+
+```
+disabled:opacity-50
+disabled:cursor-not-allowed
+disabled:pointer-events-none
+```
+
+### Loading
+
+Dois contextos com comportamentos distintos:
+
+**Botão em loading:**
+```
+opacity-75 + spinner inline + pointer-events-none
+→ mantém o tamanho do botão, evita layout shift
+```
+
+**Bloco ou seção de conteúdo:**
+```
+skeleton com cor muted + animate-pulse
+→ preferível ao spinner: mantém a estrutura visual da página durante o carregamento
+```
+
+| Contexto          | Solução              | Motivo                                      |
+|-------------------|----------------------|---------------------------------------------|
+| Botão             | spinner inline       | elemento pequeno, sem estrutura para mostrar|
+| Card / seção      | skeleton + pulse     | preserva o layout e orienta o usuário       |
+| Página inteira    | skeleton por região  | evita tela em branco                        |
+
+---
+
+## 6. Hierarquia de Botões
+
+Quatro variantes com função semântica distinta — nunca usar a variante errada para a ação errada.
+
+| Variante      | Aparência                                              | Uso                                          |
+|---------------|--------------------------------------------------------|----------------------------------------------|
+| `primary`     | `bg-primary text-primary-foreground`                   | Ação principal da view — uma por tela        |
+| `secondary`   | `border border-border bg-transparent`                  | Ação secundária, alternativa ao primary      |
+| `ghost`       | `bg-transparent hover:bg-white/5`                      | Ação terciária, em toolbars e menus          |
+| `destructive` | `bg-destructive text-destructive-foreground`           | Ações irreversíveis — deletar, revogar       |
+
+**Regras de uso:**
+```
+Primary     → no máximo um por view (ex: "Salvar", "Criar", "Confirmar")
+Secondary   → complemento do primary (ex: "Cancelar", "Voltar")
+Ghost       → ações de suporte sem peso visual (ex: ícone de filtro, menu ...)
+Destructive → sempre precedido de confirmação — nunca ação direta
+```
+
+---
+
+## 7. Feedback Semântico
+
+Cores semânticas aplicadas em badges, toasts, inputs e alertas. Nunca usadas em superfícies estruturais.
+
+| Semântica   | Hue (oklch) | Uso                                              |
+|-------------|-------------|--------------------------------------------------|
+| `success`   | H ≈ 145     | Confirmação, conclusão, status ativo             |
+| `warning`   | H ≈ 85      | Atenção, prazo, limite próximo                   |
+| `error`     | H ≈ 25      | Falha, campo inválido, ação bloqueada            |
+| `info`      | H ≈ 245     | Informação neutra, dica, status em progresso     |
+
+**Como aparecem por componente:**
+
+| Componente  | Aplicação                                                          |
+|-------------|--------------------------------------------------------------------|
+| Badge       | `bg-[cor]/15 text-[cor]` — fundo em baixa opacidade + texto na cor|
+| Toast       | Borda esquerda na cor semântica + fundo `card`                     |
+| Input erro  | `border-error` + mensagem em `text-xs/6 text-error` abaixo        |
+| Alerta      | `bg-[cor]/10 border border-[cor]/20` + ícone na cor semântica      |
+
+---
+
+## 8. Ordem de Empilhamento (z-index)
+
+Define qual superfície aparece acima de qual. Sem essa hierarquia, popovers ficam atrás de modais, toasts somem atrás de drawers.
+
+```
+z-0   → conteúdo base (cards, tabelas, seções)
+z-10  → sidebar
+z-20  → header / topbar
+z-30  → popover, dropdown, tooltip
+z-40  → modal / dialog + overlay
+z-50  → toast / notificação
+```
+
+**Regra:** elementos flutuantes (popover, modal, toast) sempre acima de elementos estruturais (sidebar, header). Toast sempre no topo — é a única comunicação que não pode ser bloqueada.
+
+---
+
+## 9. Anatomia de Componentes Complexos
+
+### Zonas visuais — máximo três por componente de tabela
+
+Todo componente de tabela tem exatamente três zonas e nunca mais:
+
+```
+Zona 1 — Cabeçalho    título + ação primária + toolbar (tudo unificado)
+Zona 2 — Conteúdo     tabela fluida, sem max-w
+Zona 3 — Rodapé       paginação, subordinada ao conteúdo
+```
+
+O toolbar **nunca é uma zona independente** — é parte do cabeçalho. Quando existe toolbar, ele entra dentro da zona de cabeçalho com espaçamento interno menor (`mt-4` entre título e toolbar). O gap externo (`mb-6`) separa o bloco de cabeçalho inteiro do conteúdo.
+
+```
+✓  [cabeçalho completo — título + toolbar  mb-6] → [tabela] → [paginação  mt-4]
+✗  [título  mb-6] → [toolbar  mb-4] → [tabela] → [paginação  mt-4]
+```
+
+Três gaps diferentes (24 → 16 → tabela → 16) criam ritmo irregular. Um gap de saída único (`mb-6`) da zona de cabeçalho resolve o problema sem abrir mão da diferenciação interna.
+
+---
+
+### Representação uniforme de dados de estado
+
+Quando uma tabela tem múltiplas colunas de classificação — status, prioridade, tipo, categoria — todas devem usar o **mesmo padrão visual**.
+
+```
+✓  Status = badge  /  Prioridade = badge    → padrão único
+✗  Status = badge  /  Prioridade = texto    → dois padrões para o mesmo conceito semântico
+```
+
+| Padrão         | Quando usar                                                           |
+|----------------|-----------------------------------------------------------------------|
+| `badge`        | Qualquer dado categórico com múltiplos valores (status, prioridade)   |
+| `text-color`   | Ênfase pontual em valor numérico único — ex: variação negativa de KPI |
+
+`text-color` solto sem fundo nunca em tabelas com colunas de estado: o olho não consegue calibrar escala de cores sem referência de área.
+
+Badge semântico:
+```
+bg-[cor]/10 text-[cor]   → fundo em baixa opacidade + texto na cor
+rounded-full px-2 py-0.5 text-xs/4 font-medium
+```
+
+---
+
+### Superfície uniforme em toolbar
+
+Todos os elementos interativos de um toolbar compartilham a mesma superfície base. Input e botão adjacentes não podem ter backgrounds diferentes sem justificativa hierárquica.
+
+```
+✓  input bg-background  +  botão bg-transparent border   → mesmo plano visual
+✗  input bg-card        +  botão bg-transparent           → planos diferentes sem hierarquia
+```
+
+A superfície correta para inputs em toolbar é `bg-background` — sem elevação. `bg-card` é reservado para containers de seção (card de métrica, painel de formulário), não para campos em contexto de toolbar.
+
+---
+
+### Células multi-linha — `align-top` obrigatório
+
+Quando qualquer célula da tabela contém duas linhas de texto (primário + secundário), adicionar `align-top` em **todas** as células daquela tabela.
+
+```
+✓  <TableCell className="px-3 py-5 align-top">   → todos os conteúdos partem do mesmo eixo
+✗  <TableCell className="px-3 py-5">             → linha simples centraliza, linha dupla vai pro topo
+```
+
+Sem `align-top`, células de linha única ficam verticalmente centralizadas enquanto a célula de dupla linha alinha pelo topo — criando dois eixos visuais distintos na mesma linha da tabela.
+
+**A regra:** se qualquer célula da tabela tiver mais de uma linha de texto, `align-top` é obrigatório em todas as células, inclusive as de linha única.
+
+---
+
+### Coluna de checkbox — offset de alinhamento esperado
+
+Tabelas com seleção por checkbox aceitam o offset entre o título da seção acima e o início do conteúdo da primeira coluna de dados. O checkbox é uma affordance funcional, não conteúdo — o alinhamento com o título não é esperado.
+
+```
+Título "Projetos"          ← alinhado com p-8 do container
+[ ] Projeto  Status ...    ← conteúdo começa após w-10 do checkbox
+```
+
+Este comportamento é correto e esperado. O que **não** é aceitável é criar um segundo nível de offset dentro da tabela (ex: padding extra na primeira célula de conteúdo tentando compensar o checkbox).
+
+---
+
+## 10. Contenção de Largura
+
+### max-width semântico obrigatório
+
+Todo componente deve declarar explicitamente se seu conteúdo é **fluido** (ocupa toda a largura disponível) ou **contido** (limitado a uma largura máxima). Ausência de decisão equivale a fluido — o que raramente é a intenção correta.
+
+```
+✓  Componente com frame intencional:
+   <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+     <MeuComponente />
+   </div>
+
+✗  Componente fluido por omissão:
+   <MeuComponente />
+   ↑ em um monitor 27" isso resulta em ~2500px de largura — condição irreal em produção
+```
+
+### Categorias e larguras de referência
+
+| Categoria                                    | Comportamento        | Largura típica         |
+|----------------------------------------------|----------------------|------------------------|
+| Tabela, formulário, configurações, conta      | Contido              | 1024px – 1440px        |
+| Dashboard com múltiplos painéis paralelos     | Fluido intencional   | Full (sem max-w)       |
+| Conteúdo editorial, texto longo               | Contido              | 640px – 768px          |
+| Modal / dialog                                | Contido (próprio)    | 480px – 720px          |
+
+### Por que isso importa
+
+Testar um componente em largura ilimitada é testar uma condição que raramente existe em produção. O max-width é a **intenção de largura do designer** — separada da responsividade, que descreve como o componente se comporta *abaixo* desse limite.
+
+Componentes fluidos em telas largas criam:
+- Linhas de texto excessivamente longas → dificuldade de rastreamento visual
+- Campos de input com 2000px de largura → proporção ilegível
+- Tabelas que exigem movimento de cabeça → fadiga cognitiva
+
+### O wrapper não pertence ao componente
+
+O componente nunca define seu próprio max-width internamente. Essa é responsabilidade do sistema de layout que o contém. O componente é desenhado para funcionar dentro do frame — não para definir o frame.
+
+```tsx
+// ✓  wrapper é responsabilidade do layout / página
+<div style={{ maxWidth: '1280px', margin: '0 auto', paddingLeft: '32px', paddingRight: '32px' }}>
+  <DataTable />
+</div>
+
+// ✗  componente controlando seu próprio frame
+export function DataTable() {
+  return <div className="max-w-5xl mx-auto">...</div>  // ← não faça isso
+}
+```

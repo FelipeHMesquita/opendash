@@ -2,11 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ColorSwatch {
@@ -133,35 +129,31 @@ export default function StyleguidePage() {
             </div>
 
             {/* ── Design Summary Banner ── */}
-            <Card className="mb-10">
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Design Summary</CardTitle>
-                    <CardDescription>Token overview for this design system</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                            <span className="text-muted-foreground text-xs uppercase tracking-wide font-semibold">Primary Color</span>
-                            <p className="mt-1 font-medium flex items-center gap-2">
-                                <span className="w-4 h-4 rounded-full inline-block" style={{ background: "var(--primary)" }} />
-                                Purple (#7C3AED-ish)
-                            </p>
-                        </div>
-                        <div>
-                            <span className="text-muted-foreground text-xs uppercase tracking-wide font-semibold">Font</span>
-                            <p className="mt-1 font-medium">Inter</p>
-                        </div>
-                        <div>
-                            <span className="text-muted-foreground text-xs uppercase tracking-wide font-semibold">Border Radius</span>
-                            <p className="mt-1 font-medium">6px — Sharp/minimal</p>
-                        </div>
-                        <div>
-                            <span className="text-muted-foreground text-xs uppercase tracking-wide font-semibold">Style</span>
-                            <p className="mt-1 font-medium">Modern minimal dark SaaS</p>
-                        </div>
+            <div className="mb-10 rounded-lg border border-border bg-card p-5">
+                <p className="text-sm font-semibold text-foreground">Design Summary</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Token overview for this design system</p>
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <span className="text-muted-foreground text-xs uppercase tracking-wide font-semibold">Primary Color</span>
+                        <p className="mt-1 font-medium flex items-center gap-2">
+                            <span className="w-4 h-4 rounded-full inline-block" style={{ background: "var(--primary)" }} />
+                            Purple (#7C3AED-ish)
+                        </p>
                     </div>
-                </CardContent>
-            </Card>
+                    <div>
+                        <span className="text-muted-foreground text-xs uppercase tracking-wide font-semibold">Font</span>
+                        <p className="mt-1 font-medium">Inter</p>
+                    </div>
+                    <div>
+                        <span className="text-muted-foreground text-xs uppercase tracking-wide font-semibold">Border Radius</span>
+                        <p className="mt-1 font-medium">6px — Sharp/minimal</p>
+                    </div>
+                    <div>
+                        <span className="text-muted-foreground text-xs uppercase tracking-wide font-semibold">Style</span>
+                        <p className="mt-1 font-medium">Modern minimal dark SaaS</p>
+                    </div>
+                </div>
+            </div>
 
             {/* ── Semantic Colors ── */}
             <Section title="Semantic Colors">
@@ -276,114 +268,6 @@ export default function StyleguidePage() {
                             <p className="text-xs font-mono text-muted-foreground">shadow-{name}</p>
                         </div>
                     ))}
-                </div>
-            </Section>
-
-            {/* ── Components ── */}
-            <Section title="Components">
-                {/* Buttons */}
-                <div className="mb-8">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Button</h3>
-                    <div className="flex flex-wrap gap-3">
-                        <Button>Default</Button>
-                        <Button variant="secondary">Secondary</Button>
-                        <Button variant="outline">Outline</Button>
-                        <Button variant="ghost">Ghost</Button>
-                        <Button variant="destructive">Destructive</Button>
-                        <Button variant="link">Link</Button>
-                        <Button disabled>Disabled</Button>
-                    </div>
-                    <div className="flex flex-wrap gap-3 mt-3">
-                        <Button size="sm">Small</Button>
-                        <Button size="default">Default</Button>
-                        <Button size="lg">Large</Button>
-                    </div>
-                </div>
-
-                {/* Badges */}
-                <div className="mb-8">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Badge</h3>
-                    <div className="flex flex-wrap gap-3">
-                        <Badge>Default</Badge>
-                        <Badge variant="secondary">Secondary</Badge>
-                        <Badge variant="outline">Outline</Badge>
-                        <Badge variant="destructive">Destructive</Badge>
-                    </div>
-                </div>
-
-                {/* Alerts */}
-                <div className="mb-8">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Alert</h3>
-                    <div className="flex flex-col gap-3">
-                        <Alert>
-                            <AlertTitle>Default Alert</AlertTitle>
-                            <AlertDescription>
-                                This is a default informational alert using the design system tokens.
-                            </AlertDescription>
-                        </Alert>
-                        <Alert variant="destructive">
-                            <AlertTitle>Destructive Alert</AlertTitle>
-                            <AlertDescription>
-                                Something went wrong. Please try again or contact support.
-                            </AlertDescription>
-                        </Alert>
-                    </div>
-                </div>
-
-                {/* Cards */}
-                <div className="mb-8">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Card</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Emails Sent</CardTitle>
-                                <CardDescription>Total this month</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-3xl font-bold">12,483</p>
-                                <p className="text-xs text-muted-foreground mt-1">↑ 12% from last month</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Deliverability</CardTitle>
-                                <CardDescription>Average rate</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-3xl font-bold">99.2%</p>
-                                <p className="text-xs text-muted-foreground mt-1">Excellent performance</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Bounce Rate</CardTitle>
-                                <CardDescription>Last 30 days</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-3xl font-bold">0.4%</p>
-                                <p className="text-xs text-muted-foreground mt-1">Below industry average</p>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-
-                {/* Radio Group */}
-                <div className="mb-8">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Radio Group</h3>
-                    <RadioGroup defaultValue="option-one" className="flex flex-col gap-2">
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="option-one" id="option-one" />
-                            <Label htmlFor="option-one">Free plan — 3,000 emails/month</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="option-two" id="option-two" />
-                            <Label htmlFor="option-two">Pro plan — 50,000 emails/month</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="option-three" id="option-three" />
-                            <Label htmlFor="option-three">Enterprise — unlimited</Label>
-                        </div>
-                    </RadioGroup>
                 </div>
             </Section>
 

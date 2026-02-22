@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Design System",
-  description: "Design system built with shadcn/ui",
+  title: "Citerii UI",
+  description: "Gere um layout completo a partir da sua identidade visual.",
 };
 
 export default function RootLayout({
