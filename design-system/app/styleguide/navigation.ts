@@ -32,6 +32,18 @@ export const navigation: NavSection[] = [
         ]
     },
     {
+        title: "Charts",
+        items: [
+            { name: "Column Chart", href: "/styleguide/components/column-chart" },
+            { name: "Bar Chart",    href: "/styleguide/components/bar-chart"    },
+            { name: "Pie Chart",    href: "/styleguide/components/pie-chart"    },
+            { name: "Area Chart",   href: "/styleguide/components/area-chart"   },
+            { name: "Line Chart",   href: "/styleguide/components/line-chart"   },
+            { name: "Ranked List",  href: "/styleguide/components/ranked-list"  },
+            { name: "Funnel Chart", href: "/styleguide/components/funnel-chart" },
+        ]
+    },
+    {
         title: "Forms & People",
         items: [
             { name: "Form Page",    href: "/styleguide/components/form-page" },

@@ -5,11 +5,35 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+interface SurfaceLevel {
+    token: string
+    level: string
+    value: string
+    usage: string
+}
+
 interface ColorSwatch {
     name: string
     variable: string
     textVariable?: string
 }
+
+// ─── Surface Elevation Data ───────────────────────────────────────────────────
+const lightSurfaces: SurfaceLevel[] = [
+    { token: "--background", level: "Level 0",   value: "oklch(0.98 0 0)", usage: "Fundo de página" },
+    { token: "--sidebar",    level: "Level 0.5", value: "oklch(0.97 0 0)", usage: "Sidebar / nav lateral" },
+    { token: "--muted",      level: "Level 1",   value: "oklch(0.96 0 0)", usage: "Superfícies secundárias" },
+    { token: "--card",       level: "Level 2",   value: "oklch(1.00 0 0)", usage: "Cards, painéis" },
+]
+
+const darkSurfaces: SurfaceLevel[] = [
+    { token: "--background", level: "Level 0",   value: "oklch(0.08 0 0)", usage: "Fundo de página" },
+    { token: "--sidebar",    level: "Level 0.5", value: "oklch(0.10 0 0)", usage: "Sidebar / nav lateral" },
+    { token: "--card",       level: "Level 1",   value: "oklch(0.12 0 0)", usage: "Cards, painéis" },
+    { token: "--popover",    level: "Level 2",   value: "oklch(0.14 0 0)", usage: "Popovers, dropdowns" },
+    { token: "--muted",      level: "Level 3",   value: "oklch(0.18 0 0)", usage: "Superfícies secundárias" },
+    { token: "--accent",     level: "Level 4",   value: "oklch(0.20 0 0)", usage: "Tooltips, hover bg" },
+]
 
 // ─── Color Data ───────────────────────────────────────────────────────────────
 const semanticColors: ColorSwatch[] = [
@@ -80,6 +104,35 @@ function ColorCard({ swatch }: { swatch: ColorSwatch }) {
             <div>
                 <p className="text-xs font-medium text-foreground">{swatch.name}</p>
                 <p className="text-[11px] font-mono text-muted-foreground">{swatch.variable}</p>
+            </div>
+        </div>
+    )
+}
+
+function SurfaceStack({ title, surfaces, isDark }: { title: string; surfaces: SurfaceLevel[]; isDark: boolean }) {
+    const textColor  = isDark ? "oklch(0.97 0 0)" : "oklch(0.13 0 0)"
+    const mutedColor = isDark ? "oklch(0.55 0 0)" : "oklch(0.52 0 0)"
+    const borderColor = isDark ? "oklch(1 0 0 / 10%)" : "oklch(0 0 0 / 8%)"
+    return (
+        <div className="flex-1 min-w-0">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+            <div className="flex flex-col gap-1">
+                {surfaces.map((s) => (
+                    <div
+                        key={s.token}
+                        className="flex items-center gap-3 rounded-md px-3 py-2.5 border"
+                        style={{ background: s.value, borderColor }}
+                    >
+                        <div className="min-w-0">
+                            <p className="text-[11px] font-mono font-medium truncate" style={{ color: textColor }}>{s.token}</p>
+                            <p className="text-[10px]" style={{ color: mutedColor }}>{s.usage}</p>
+                        </div>
+                        <div className="ml-auto text-right shrink-0">
+                            <p className="text-[10px] font-mono" style={{ color: mutedColor }}>{s.value}</p>
+                            <p className="text-[10px]" style={{ color: mutedColor }}>{s.level}</p>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     )
@@ -161,6 +214,26 @@ export default function StyleguidePage() {
                     {semanticColors.map((swatch) => (
                         <ColorCard key={swatch.variable} swatch={swatch} />
                     ))}
+                </div>
+            </Section>
+
+            {/* ── Surface Elevation ── */}
+            <Section title="Surface Elevation">
+                <div className="flex flex-col sm:flex-row gap-6 mb-5">
+                    <SurfaceStack title="Light" surfaces={lightSurfaces} isDark={false} />
+                    <SurfaceStack title="Dark"  surfaces={darkSurfaces}  isDark={true}  />
+                </div>
+                <div className="rounded-md border border-border bg-muted/40 px-4 py-3">
+                    <p className="text-xs font-medium text-foreground mb-1">Variações aceitáveis</p>
+                    <p className="text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">Dark:</span> use valores entre{" "}
+                        <code className="font-mono">oklch(0.08)</code> e <code className="font-mono">oklch(0.24)</code>.{" "}
+                        <span className="font-medium text-foreground">Light:</span> entre{" "}
+                        <code className="font-mono">oklch(0.93)</code> e <code className="font-mono">oklch(1.00)</code>.{" "}
+                        Novos tokens devem ser registrados em{" "}
+                        <code className="font-mono">globals.css</code> para manter consistência.
+                        Bordas no dark usam <code className="font-mono">oklch(1 0 0 / 10%)</code> — prefira isso a criar novas camadas.
+                    </p>
                 </div>
             </Section>
 
