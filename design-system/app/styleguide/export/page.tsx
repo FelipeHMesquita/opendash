@@ -6,11 +6,20 @@ import { ChevronDown, Copy, Check, Loader2 } from "lucide-react"
 import { useCart } from "../_cart-context"
 import { componentRegistry } from "../_component-registry"
 
+// ─── Theme block builder ──────────────────────────────────────────────────────
+
+function buildThemeBlock(name: string, vars: Record<string, string>): string {
+    const lines = Object.entries(vars)
+        .map(([k, v]) => `  ${k}: ${v};`)
+        .join("\n")
+    return `/* Theme: ${name} */\n:root {\n${lines}\n}`
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Extract all component filenames from an importStatement */
 function extractFilenames(importStatement: string): string[] {
-    const matches = [...importStatement.matchAll(/@\/componentsSugest\/(\w+)/g)]
+    const matches = [...importStatement.matchAll(/@\/componentsSugest\/([^\s"']+)/g)]
     return matches.map((m) => m[1])
 }
 
@@ -35,7 +44,7 @@ async function fetchSources(filenames: string[]): Promise<string> {
  */
 function buildUsageSnippet(importStatement: string, maxWidth: number): string {
     const imports = importStatement.split("\n").flatMap(line => {
-        const m = line.match(/import \{ (\w+) \} from "@\/componentsSugest\/(\w+)"/)
+        const m = line.match(/import \{ (\w+) \} from "@\/componentsSugest\/([^\s"']+)"/)
         return m ? [{ name: m[1], file: m[2] }] : []
     })
 
@@ -150,6 +159,15 @@ export default function ExportPage() {
         new Map(items.map((item) => [`${item.gridConfig.maxWidth ?? 0}`, item.gridConfig])).values()
     )
 
+    // Deduplicate themes by name, preserving first-seen order
+    const uniqueThemes = Array.from(
+        new Map(
+            items
+                .filter((item) => item.theme)
+                .map((item) => [item.theme.name, item.theme])
+        ).values()
+    )
+
     return (
         <div className="mx-auto max-w-4xl px-6 py-10">
 
@@ -176,6 +194,19 @@ export default function ExportPage() {
                     </button>
                 </div>
             </div>
+
+            {/* Theme tokens */}
+            {uniqueThemes.length > 0 && (
+                <div className="mb-6 overflow-hidden rounded-lg border border-border">
+                    {uniqueThemes.map((t) => (
+                        <CodeBlock
+                            key={t.name}
+                            label={`globals.css · tema ${t.name}`}
+                            code={buildThemeBlock(t.name, t.vars)}
+                        />
+                    ))}
+                </div>
+            )}
 
             {/* Grid specs banner */}
             <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-900/50 dark:bg-amber-950/30">

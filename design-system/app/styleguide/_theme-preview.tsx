@@ -10,42 +10,13 @@ import { useSidebar } from "./_sidebar-context"
 
 // ─── Themes ───────────────────────────────────────────────────────────────────
 
-type ThemeName = "Light" | "Dark" | "Custom"
+import { type ThemeName, ALL_THEMES, themes, THEME_SWATCHES } from "./_themes"
+import { componentRegistry } from "./_component-registry"
 
-const themes: Record<"Light" | "Dark", Record<string, string>> = {
-    "Light": {
-        "--background":         "oklch(0.98 0 0)",
-        "--foreground":         "oklch(0.13 0 0)",
-        "--card":               "oklch(1.00 0 0)",
-        "--card-foreground":    "oklch(0.13 0 0)",
-        "--muted":              "oklch(0.96 0 0)",
-        "--muted-foreground":   "oklch(0.52 0 0)",
-        "--border":             "oklch(0 0 0 / 8%)",
-        "--accent":             "oklch(0.96 0 0)",
-        "--accent-foreground":  "oklch(0.13 0 0)",
-        "--primary":            "oklch(0.30 0.18 250)",
-        "--primary-foreground": "oklch(1 0 0)",
-        "--ring":               "oklch(0.30 0.18 250)",
-    },
-    "Dark": {
-        "--background":         "oklch(0.08 0 0)",
-        "--foreground":         "oklch(0.97 0 0)",
-        "--card":               "oklch(0.12 0 0)",
-        "--card-foreground":    "oklch(0.97 0 0)",
-        "--muted":              "oklch(0.18 0 0)",
-        "--muted-foreground":   "oklch(0.60 0 0)",
-        "--border":             "oklch(1 0 0 / 10%)",
-        "--accent":             "oklch(0.20 0 0)",
-        "--accent-foreground":  "oklch(0.97 0 0)",
-        "--primary":            "oklch(0.62 0.22 250)",
-        "--primary-foreground": "oklch(1 0 0)",
-        "--ring":               "oklch(0.62 0.22 250)",
-    },
-}
-
-const STORAGE_KEY = "styleguide_theme"
+const STORAGE_KEY           = "styleguide_theme"
 const STORAGE_KEY_INSPECTED = "styleguide_inspected_vars"
-const GRID_STORAGE_KEY = "styleguide_grid"
+const GRID_STORAGE_KEY      = "styleguide_grid"
+const CHART_VARIANT_KEY     = "styleguide_chart_variant"
 
 function applyTheme(name: ThemeName, customVars?: Record<string, string>) {
     const root = document.documentElement
@@ -53,7 +24,7 @@ function applyTheme(name: ThemeName, customVars?: Record<string, string>) {
         Object.entries(customVars).forEach(([key, value]) => root.style.setProperty(key, value))
         return
     }
-    const vars = themes[name as "Light" | "Dark"]
+    const vars = themes[name as Exclude<ThemeName, "Custom">]
     if (!vars) return
     Object.entries(vars).forEach(([key, value]) => root.style.setProperty(key, value))
 }
@@ -125,6 +96,16 @@ export function ThemePreview({
     const [maxWidth, setMaxWidth] = React.useState(0)
     const [appliedGrid, setAppliedGrid] = React.useState({ maxWidth: 0 })
     const [justAdded, setJustAdded] = React.useState(false)
+    const [globalVariant, setGlobalVariant] = React.useState("Default")
+    const [activeVariantIdx, setActiveVariantIdx] = React.useState(0)
+
+    const chartVariants = componentRegistry[slug]?.variants ?? []
+    const allGlobalVariants = React.useMemo(() =>
+        Array.from(new Set(
+            Object.values(componentRegistry).flatMap(e => e.variants?.map(v => v.label) ?? [])
+        )),
+        []
+    )
 
     const gridSaveReady = React.useRef(false)
 
@@ -139,7 +120,7 @@ export function ThemePreview({
                 applyTheme("Custom", vars)
             } else {
                 const stored = localStorage.getItem(STORAGE_KEY) as ThemeName | null
-                const initial = stored === "Light" || stored === "Dark" ? stored : "Light"
+                const initial = stored && (ALL_THEMES as string[]).includes(stored) ? stored : "Light"
                 setActiveTheme(initial)
                 applyTheme(initial)
             }
@@ -151,12 +132,24 @@ export function ThemePreview({
             const g = JSON.parse(localStorage.getItem(GRID_STORAGE_KEY) ?? "null")
             if (g && typeof g.maxWidth === "number") setMaxWidth(g.maxWidth)
         } catch {}
+
+        try {
+            const gv = localStorage.getItem(CHART_VARIANT_KEY)
+            if (gv) setGlobalVariant(gv)
+        } catch {}
     }, [])
 
     React.useEffect(() => {
         if (!gridSaveReady.current) { gridSaveReady.current = true; return }
         localStorage.setItem(GRID_STORAGE_KEY, JSON.stringify({ maxWidth }))
     }, [maxWidth])
+
+    // Auto-seleciona variante local que bate com a global quando muda de página
+    React.useEffect(() => {
+        if (!chartVariants.length) { setActiveVariantIdx(0); return }
+        const idx = chartVariants.findIndex(v => v.label === globalVariant)
+        setActiveVariantIdx(idx >= 0 ? idx : 0)
+    }, [slug, globalVariant]) // eslint-disable-line react-hooks/exhaustive-deps
 
     React.useEffect(() => {
         function onInspected(e: Event) {
@@ -178,9 +171,28 @@ export function ThemePreview({
         setAppliedGrid({ maxWidth })
     }
 
+    function handleGlobalVariant(label: string) {
+        setGlobalVariant(label)
+        localStorage.setItem(CHART_VARIANT_KEY, label)
+        if (chartVariants.length) {
+            const idx = chartVariants.findIndex(v => v.label === label)
+            setActiveVariantIdx(idx >= 0 ? idx : 0)
+        }
+    }
+
     function handleAddToCart() {
         if (!slug) return
-        addItem({ id: slug, name: componentName, gridConfig: appliedGrid })
+        const resolvedVars =
+            activeTheme === "Custom" && customVars
+                ? customVars
+                : themes[activeTheme as Exclude<ThemeName, "Custom">] ?? {}
+        addItem({
+            id: slug,
+            name: componentName,
+            gridConfig: appliedGrid,
+            theme: { name: activeTheme, vars: resolvedVars },
+            variant: chartVariants[activeVariantIdx]?.label,
+        })
         setJustAdded(true)
         setTimeout(() => setJustAdded(false), 1500)
     }
@@ -206,24 +218,88 @@ export function ThemePreview({
 
             <div className="h-4 w-px bg-border" />
 
-            {/* Theme toggle — Light, Dark, and Custom (when inspected) */}
-            <div className="flex overflow-hidden rounded border border-border">
-                {(customVars ? ["Light", "Dark", "Custom"] as ThemeName[] : ["Light", "Dark"] as ThemeName[]).map((name, i) => (
+            {/* Theme toggle — surface swatches */}
+            <div className="flex items-center gap-1.5">
+                {ALL_THEMES.map((name) => (
                     <button
                         key={name}
+                        title={name}
                         onClick={() => handleThemeChange(name)}
                         className={cn(
-                            "px-3 py-1 text-xs font-medium transition-colors",
-                            i > 0 && "border-l border-border",
+                            "h-4 w-4 rounded-full border transition-all",
                             activeTheme === name
-                                ? "bg-primary/10 text-primary"
-                                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                                ? "scale-125 ring-2 ring-offset-1 ring-offset-background ring-primary border-transparent"
+                                : "border-border/50 opacity-70 hover:opacity-100 hover:scale-110"
                         )}
-                    >
-                        {name}
-                    </button>
+                        style={{ background: THEME_SWATCHES[name] }}
+                    />
                 ))}
+                {customVars && (
+                    <button
+                        title="Custom"
+                        onClick={() => handleThemeChange("Custom")}
+                        className={cn(
+                            "h-4 w-4 rounded-full border border-dashed border-border transition-all",
+                            activeTheme === "Custom"
+                                ? "scale-125 ring-2 ring-offset-1 ring-offset-background ring-primary"
+                                : "opacity-70 hover:opacity-100"
+                        )}
+                        style={{ background: "var(--primary)" }}
+                    />
+                )}
             </div>
+
+            {/* Variação global — só aparece em páginas de gráfico */}
+            {chartVariants.length > 0 && (
+                <>
+                    <div className="h-4 w-px bg-border" />
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground">Variação</span>
+                        <div className="flex items-center gap-1">
+                            {allGlobalVariants.map((label) => (
+                                <button
+                                    key={label}
+                                    onClick={() => handleGlobalVariant(label)}
+                                    className={cn(
+                                        "rounded px-2 py-0.5 text-xs font-medium transition-colors",
+                                        globalVariant === label
+                                            ? "bg-primary/10 text-primary"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Variante local — só aparece quando o gráfico tem mais de uma variante */}
+            {chartVariants.length > 1 && (
+                <>
+                    <div className="h-4 w-px bg-border" />
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground">Variante</span>
+                        <div className="flex items-center gap-1">
+                            {chartVariants.map((v, idx) => (
+                                <button
+                                    key={v.label}
+                                    onClick={() => setActiveVariantIdx(idx)}
+                                    className={cn(
+                                        "rounded px-2 py-0.5 text-xs font-medium transition-colors",
+                                        activeVariantIdx === idx
+                                            ? "bg-primary/10 text-primary"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    {v.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
 
             <div className="h-4 w-px bg-border" />
 
@@ -286,6 +362,10 @@ export function ThemePreview({
         </div>
     )
 
+    const activeElement = (activeVariantIdx > 0 && chartVariants[activeVariantIdx])
+        ? chartVariants[activeVariantIdx].element
+        : children
+
     // Content area: max-width constrains the component to the specified content area width.
     // Centering simulates how the component sits inside a product layout (sidebar + content area).
     const content = (
@@ -297,7 +377,7 @@ export function ThemePreview({
                 marginRight: "auto",
             }}
         >
-            {children}
+            {activeElement}
         </div>
     )
 

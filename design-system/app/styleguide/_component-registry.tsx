@@ -26,11 +26,25 @@ import { BillingPage } from "@/componentsSugest/BillingPage"
 import { NotificationsPage } from "@/componentsSugest/NotificationsPage"
 import { ErrorPage } from "@/componentsSugest/ErrorPage"
 import { FrameBase } from "@/componentsSugest/FrameBase"
+import { ColumnChart } from "@/componentsSugest/charts/ColumnChart"
+import { HorizontalBarChart } from "@/componentsSugest/charts/HorizontalBarChart"
+import { DonutChart } from "@/componentsSugest/charts/DonutChart"
+import { AreaChart } from "@/componentsSugest/charts/AreaChart"
+import { LineChart } from "@/componentsSugest/charts/LineChart"
+import { RankedList } from "@/componentsSugest/charts/RankedList"
+import { FunnelChart } from "@/componentsSugest/charts/FunnelChart"
+
+export interface VariantEntry {
+    label: string
+    element: React.ReactNode
+    importStatement?: string  // fallback para entry.importStatement se omitido
+}
 
 export interface RegistryEntry {
     name: string
     importStatement: string
     element: React.ReactNode
+    variants?: VariantEntry[]
 }
 
 export const componentRegistry: Record<string, RegistryEntry> = {
@@ -158,5 +172,47 @@ export const componentRegistry: Record<string, RegistryEntry> = {
         name: "Frame Base",
         importStatement: 'import { FrameBase } from "@/componentsSugest/FrameBase"',
         element: <FrameBase />,
+    },
+    "column-chart": {
+        name: "Column Chart",
+        importStatement: 'import { ColumnChart } from "@/componentsSugest/charts/ColumnChart"',
+        element: <ColumnChart />,
+        variants: [{ label: "Default", element: <ColumnChart /> }],
+    },
+    "bar-chart": {
+        name: "Bar Chart",
+        importStatement: 'import { HorizontalBarChart } from "@/componentsSugest/charts/HorizontalBarChart"',
+        element: <HorizontalBarChart />,
+        variants: [{ label: "Default", element: <HorizontalBarChart /> }],
+    },
+    "pie-chart": {
+        name: "Pie Chart",
+        importStatement: 'import { DonutChart } from "@/componentsSugest/charts/DonutChart"',
+        element: <DonutChart />,
+        variants: [{ label: "Default", element: <DonutChart /> }],
+    },
+    "area-chart": {
+        name: "Area Chart",
+        importStatement: 'import { AreaChart } from "@/componentsSugest/charts/AreaChart"',
+        element: <AreaChart />,
+        variants: [{ label: "Default", element: <AreaChart /> }],
+    },
+    "line-chart": {
+        name: "Line Chart",
+        importStatement: 'import { LineChart } from "@/componentsSugest/charts/LineChart"',
+        element: <LineChart />,
+        variants: [{ label: "Default", element: <LineChart /> }],
+    },
+    "ranked-list": {
+        name: "Ranked List",
+        importStatement: 'import { RankedList } from "@/componentsSugest/charts/RankedList"',
+        element: <RankedList />,
+        variants: [{ label: "Default", element: <RankedList /> }],
+    },
+    "funnel-chart": {
+        name: "Funnel Chart",
+        importStatement: 'import { FunnelChart } from "@/componentsSugest/charts/FunnelChart"',
+        element: <FunnelChart />,
+        variants: [{ label: "Default", element: <FunnelChart /> }],
     },
 }

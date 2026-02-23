@@ -9,8 +9,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Missing file param" }, { status: 400 })
     }
 
-    // Prevent path traversal — only allow plain component names
-    if (!/^[A-Za-z0-9_-]+$/.test(file)) {
+    // Prevent path traversal — allow letters, digits, underscores, hyphens and forward slashes
+    // but explicitly block any attempt to navigate up directories
+    if (file.includes("..") || !/^[A-Za-z0-9_/-]+$/.test(file)) {
         return NextResponse.json({ error: "Invalid file name" }, { status: 400 })
     }
 

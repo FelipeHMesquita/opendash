@@ -57,15 +57,17 @@ export default function CartPage() {
                         <div className="flex flex-col gap-1">
                             <span className="text-sm font-medium text-foreground">{item.name}</span>
                             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                <span>{item.gridConfig.cols} colunas</span>
-                                <span className="text-border">·</span>
-                                <span>{item.gridConfig.gutter}px gutter</span>
-                                <span className="text-border">·</span>
                                 <span>
-                                    {item.gridConfig.margin === 0
-                                        ? "sem margem"
-                                        : `${item.gridConfig.margin}px margem`}
+                                    {item.gridConfig.maxWidth === 0 ? "Full width" : `${item.gridConfig.maxWidth}px`}
                                 </span>
+                                <span className="text-border">·</span>
+                                <span>{item.theme?.name ?? "Light"}</span>
+                                {item.variant && item.variant !== "Default" && (
+                                    <>
+                                        <span className="text-border">·</span>
+                                        <span>{item.variant}</span>
+                                    </>
+                                )}
                             </div>
                         </div>
                         <button

@@ -12,6 +12,8 @@ export interface CartItem {
     id: string
     name: string
     gridConfig: GridConfig
+    theme: { name: string; vars: Record<string, string> }
+    variant?: string
 }
 
 interface CartContextValue {
