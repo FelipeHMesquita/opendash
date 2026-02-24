@@ -1,9 +1,9 @@
 // ─── Theme types & data ───────────────────────────────────────────────────────
 // Shared between _theme-preview.tsx (UI) and export/page.tsx (code generation)
 
-export type ThemeName = "Light" | "Dark" | "Graphite" | "Midnight" | "Amethyst" | "Forest" | "Custom"
+export type ThemeName = "Light" | "Dark" | "Graphite" | "Midnight" | "Amethyst" | "Forest" | "Dash" | "VSCode" | "Custom"
 
-export const ALL_THEMES: Exclude<ThemeName, "Custom">[] = ["Light", "Dark", "Graphite", "Midnight", "Amethyst", "Forest"]
+export const ALL_THEMES: Exclude<ThemeName, "Custom">[] = ["Light", "Dark", "Graphite", "Midnight", "Amethyst", "Forest", "Dash", "VSCode"]
 
 export const DARK_SHARED: Record<string, string> = {
     "--foreground":         "oklch(0.97 0 0)",
@@ -70,6 +70,36 @@ export const themes: Record<Exclude<ThemeName, "Custom">, Record<string, string>
         "--accent":     "oklch(0.21 0.010 160)",
         "--border":     "oklch(1 0 0 / 10%)",
     },
+    // ── Analytics dashboard feel: dark navy base, subtle blue tint, moderate elevation
+    "Dash": {
+        "--background":         "oklch(0.13 0.015 240)",
+        "--foreground":         "oklch(0.95 0 0)",
+        "--card":               "oklch(0.17 0.012 240)",
+        "--card-foreground":    "oklch(0.95 0 0)",
+        "--muted":              "oklch(0.20 0.009 240)",
+        "--muted-foreground":   "oklch(0.56 0 0)",
+        "--border":             "oklch(1 0 0 / 8%)",
+        "--accent":             "oklch(0.22 0.008 240)",
+        "--accent-foreground":  "oklch(0.95 0 0)",
+        "--primary":            "oklch(0.58 0.22 235)",
+        "--primary-foreground": "oklch(1 0 0)",
+        "--ring":               "oklch(0.58 0.22 235)",
+    },
+    // ── VS Code Dark+ feel: neutral grey, bigger elevation steps (+0.04 L), no tint
+    "VSCode": {
+        "--background":         "oklch(0.15 0 0)",
+        "--foreground":         "oklch(0.95 0 0)",
+        "--card":               "oklch(0.19 0 0)",
+        "--card-foreground":    "oklch(0.95 0 0)",
+        "--muted":              "oklch(0.24 0 0)",
+        "--muted-foreground":   "oklch(0.58 0 0)",
+        "--border":             "oklch(1 0 0 / 8%)",
+        "--accent":             "oklch(0.27 0 0)",
+        "--accent-foreground":  "oklch(0.95 0 0)",
+        "--primary":            "oklch(0.55 0.22 250)",
+        "--primary-foreground": "oklch(1 0 0)",
+        "--ring":               "oklch(0.55 0.22 250)",
+    },
 }
 
 export const THEME_SWATCHES: Record<Exclude<ThemeName, "Custom">, string> = {
@@ -79,4 +109,6 @@ export const THEME_SWATCHES: Record<Exclude<ThemeName, "Custom">, string> = {
     "Midnight": "oklch(0.40 0.10 230)",
     "Amethyst": "oklch(0.38 0.09 284)",
     "Forest":   "oklch(0.35 0.09 160)",
+    "Dash":     "oklch(0.42 0.12 240)",
+    "VSCode":   "oklch(0.44 0 0)",
 }

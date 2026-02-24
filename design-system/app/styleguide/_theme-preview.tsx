@@ -275,31 +275,6 @@ export function ThemePreview({
                 </>
             )}
 
-            {/* Variante local — só aparece quando o gráfico tem mais de uma variante */}
-            {chartVariants.length > 1 && (
-                <>
-                    <div className="h-4 w-px bg-border" />
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-muted-foreground">Variante</span>
-                        <div className="flex items-center gap-1">
-                            {chartVariants.map((v, idx) => (
-                                <button
-                                    key={v.label}
-                                    onClick={() => setActiveVariantIdx(idx)}
-                                    className={cn(
-                                        "rounded px-2 py-0.5 text-xs font-medium transition-colors",
-                                        activeVariantIdx === idx
-                                            ? "bg-primary/10 text-primary"
-                                            : "text-muted-foreground hover:text-foreground"
-                                    )}
-                                >
-                                    {v.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </>
-            )}
 
             <div className="h-4 w-px bg-border" />
 

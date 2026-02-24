@@ -86,7 +86,7 @@ export function FunnelChart() {
                     </div>
                     <div className="text-right">
                         <p className="text-lg font-semibold text-foreground">{finalConv}%</p>
-                        <p className="text-[10px] text-muted-foreground">conversão total</p>
+                        <p className="text-xs text-muted-foreground">conversão total</p>
                     </div>
                 </div>
 
@@ -138,7 +138,7 @@ export function FunnelChart() {
                                         x={labelX}
                                         y={labelY}
                                         textAnchor="middle"
-                                        fontSize={11}
+                                        fontSize={12}
                                         fill="var(--muted-foreground)"
                                     >
                                         ↓ {dropPct}%
@@ -167,7 +167,7 @@ export function FunnelChart() {
                                 x={barX + barW / 2}
                                 y={barY - 8}
                                 textAnchor="middle"
-                                fontSize={11}
+                                fontSize={12}
                                 fontWeight={600}
                                 fill="var(--foreground)"
                             >
@@ -182,7 +182,7 @@ export function FunnelChart() {
                                 x={barX + barW / 2}
                                 y={bottomY + 18}
                                 textAnchor="middle"
-                                fontSize={11}
+                                fontSize={12}
                                 fill="var(--muted-foreground)"
                             >
                                 {stage.name}
@@ -195,7 +195,7 @@ export function FunnelChart() {
                                 key={tick.value}
                                 x={width - PAD.right + 8}
                                 y={tick.y + 4}
-                                fontSize={11}
+                                fontSize={12}
                                 fill="var(--muted-foreground)"
                             >
                                 {fmtK(tick.value)}

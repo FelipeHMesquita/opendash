@@ -236,7 +236,8 @@ export default function ExportPage() {
                     const isOpen = openIds.has(item.id)
                     const isLoading = loadingIds.has(item.id)
                     const source = sources[item.id]
-                    const importStatement = entry?.importStatement ?? ""
+                    const activeVariant = entry?.variants?.find(v => v.label === item.variant)
+                    const importStatement = activeVariant?.importStatement ?? entry?.importStatement ?? ""
                     const usageSnippet = buildUsageSnippet(importStatement, maxWidth)
 
                     return (

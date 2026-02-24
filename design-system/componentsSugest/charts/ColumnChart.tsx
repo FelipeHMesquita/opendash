@@ -47,6 +47,13 @@ const axisStyle = {
     tickLine: false as const,
 }
 
+// v2: fontSize 12 = text-xs do sistema (caption — orientar, não competir)
+const axisStyleV2 = {
+    tick: { fill: "var(--muted-foreground)", fontSize: 12 },
+    axisLine: { stroke: "var(--border)" },
+    tickLine: false as const,
+}
+
 const cursorStyle = { fill: "var(--border)", fillOpacity: 0.5 }
 
 // ─── Tooltip (memoized — only re-renders when active/payload/label change) ─────
@@ -123,6 +130,36 @@ function ChartLegend({ payload }: CustomLegendProps) {
     )
 }
 
+// ─── Tooltip v2 — label xs/muted, valor sm/foreground (hierarquia por função) ──
+
+function ChartTooltipV2({ active, payload, label }: CustomTooltipProps) {
+    if (!active || !payload?.length) return null
+    return (
+        <div
+            className="rounded px-3 py-2 shadow-lg"
+            style={{ background: "var(--accent)", border: "1px solid var(--border)" }}
+        >
+            {label && (
+                <p className="mb-1.5 text-xs font-medium" style={{ color: "var(--muted-foreground)" }}>{label}</p>
+            )}
+            <div className="flex flex-col gap-1">
+                {payload.map((entry) => (
+                    <div key={entry.name} className="flex items-center gap-2">
+                        <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>{entry.name}</span>
+                        <span className="ml-auto pl-4 text-sm font-semibold tabular-nums" style={{ color: "var(--foreground)" }}>
+                            R${(entry.value / 1000).toFixed(0)}k
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export function ColumnChart() {
@@ -151,6 +188,69 @@ export function ColumnChart() {
                         />
                         <Tooltip
                             content={ChartTooltip}
+                            cursor={cursorStyle}
+                            isAnimationActive={false}
+                        />
+                        <Legend content={ChartLegend} />
+                        <Bar
+                            dataKey="receita"
+                            name="Receita"
+                            fill={CHART_COLORS[0]}
+                            radius={[3, 3, 0, 0]}
+                            isAnimationActive={false}
+                        />
+                        <Bar
+                            dataKey="despesas"
+                            name="Despesas"
+                            fill={CHART_COLORS[1]}
+                            radius={[3, 3, 0, 0]}
+                            isAnimationActive={false}
+                        />
+                        <Bar
+                            dataKey="lucro"
+                            name="Lucro"
+                            fill={CHART_COLORS[2]}
+                            radius={[3, 3, 0, 0]}
+                            isAnimationActive={false}
+                        />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    )
+}
+
+// ─── ColumnChartV2 — tipografia calibrada por função ──────────────────────────
+// Diferenças em relação ao default:
+//   · axisStyleV2: fontSize 12 (text-xs = caption, orientar sem competir)
+//   · ChartTooltipV2: label xs/muted + valor sm/semibold (hierarquia clara no hover)
+
+export function ColumnChartV2() {
+    return (
+        <div className="w-full p-8">
+            <div className="rounded-lg border border-border bg-card p-6">
+                <div className="mb-6">
+                    <h3 className="text-sm/6 font-semibold text-foreground">
+                        Receita, Despesas e Lucro
+                    </h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                        Comparativo mensal — 2024
+                    </p>
+                </div>
+                <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={DATA} barCategoryGap="20%" barGap={4}>
+                        <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="var(--border)"
+                            vertical={false}
+                        />
+                        <XAxis dataKey="month" {...axisStyleV2} />
+                        <YAxis
+                            {...axisStyleV2}
+                            tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`}
+                        />
+                        <Tooltip
+                            content={ChartTooltipV2}
                             cursor={cursorStyle}
                             isAnimationActive={false}
                         />

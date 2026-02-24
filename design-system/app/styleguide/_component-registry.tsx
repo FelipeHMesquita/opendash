@@ -26,7 +26,7 @@ import { BillingPage } from "@/componentsSugest/BillingPage"
 import { NotificationsPage } from "@/componentsSugest/NotificationsPage"
 import { ErrorPage } from "@/componentsSugest/ErrorPage"
 import { FrameBase } from "@/componentsSugest/FrameBase"
-import { ColumnChart } from "@/componentsSugest/charts/ColumnChart"
+import { ColumnChart, ColumnChartV2 } from "@/componentsSugest/charts/ColumnChart"
 import { HorizontalBarChart } from "@/componentsSugest/charts/HorizontalBarChart"
 import { DonutChart } from "@/componentsSugest/charts/DonutChart"
 import { AreaChart } from "@/componentsSugest/charts/AreaChart"
@@ -177,7 +177,10 @@ export const componentRegistry: Record<string, RegistryEntry> = {
         name: "Column Chart",
         importStatement: 'import { ColumnChart } from "@/componentsSugest/charts/ColumnChart"',
         element: <ColumnChart />,
-        variants: [{ label: "Default", element: <ColumnChart /> }],
+        variants: [
+            { label: "Default",       element: <ColumnChart /> },
+            { label: "Typography v2", element: <ColumnChartV2 />, importStatement: 'import { ColumnChartV2 } from "@/componentsSugest/charts/ColumnChart"' },
+        ],
     },
     "bar-chart": {
         name: "Bar Chart",

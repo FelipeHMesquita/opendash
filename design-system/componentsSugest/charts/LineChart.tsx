@@ -51,7 +51,7 @@ const SERIES = [
 // ─── Stable references ─────────────────────────────────────────────────────────
 
 const axisStyle = {
-    tick: { fill: "var(--muted-foreground)", fontSize: 11 },
+    tick: { fill: "var(--muted-foreground)", fontSize: 12 },
     axisLine: { stroke: "var(--border)" },
     tickLine: false as const,
 }
@@ -93,7 +93,7 @@ function ChartTooltip({ active, payload, label }: CustomTooltipProps) {
                             style={{ backgroundColor: entry.color }}
                         />
                         <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>{entry.name}</span>
-                        <span className="ml-auto pl-4 text-xs font-medium tabular-nums" style={{ color: "var(--foreground)" }}>
+                        <span className="ml-auto pl-4 text-sm font-semibold tabular-nums" style={{ color: "var(--foreground)" }}>
                             {entry.value.toLocaleString("pt-BR")}
                         </span>
                     </div>

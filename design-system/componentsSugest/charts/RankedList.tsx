@@ -41,7 +41,7 @@ function RankedRow({ item, index }: { item: RankedItem; index: number }) {
         <div className="group flex items-start gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-muted/40">
             {/* Rank badge */}
             <div
-                className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-semibold"
+                className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded text-xs font-semibold"
                 style={{ backgroundColor: `${color}20`, color }}
             >
                 {item.rank}
@@ -55,7 +55,7 @@ function RankedRow({ item, index }: { item: RankedItem; index: number }) {
                         {item.value.toLocaleString("pt-BR")}
                     </span>
                 </div>
-                <p className="mb-1.5 text-[10px] text-muted-foreground">{item.category}</p>
+                <p className="mb-1.5 text-xs text-muted-foreground">{item.category}</p>
                 {/* Progress bar */}
                 <div className="h-0.5 w-full overflow-hidden rounded-full bg-muted">
                     <div
