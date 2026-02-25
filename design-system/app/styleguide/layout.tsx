@@ -24,6 +24,12 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
     const { collapsed } = useSidebar()
 
+    // Builder page gets full-screen, no nav sidebar
+    const isBuilder = pathname.startsWith("/styleguide/dashboard-builder")
+    if (isBuilder) {
+        return <CartProvider>{children}</CartProvider>
+    }
+
     return (
         <div className="grid min-h-screen grid-cols-[auto_1fr] bg-background text-foreground">
             {/* Nav sidebar */}
@@ -31,7 +37,6 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
                 className={cn(
                     "sticky top-0 h-screen bg-card flex flex-col gap-6",
                     "transition-[width,padding,border-width,opacity] duration-200 ease-in-out",
-                    // Scrollbar: track transparent, thumb subtle
                     "[&::-webkit-scrollbar]:w-1",
                     "[&::-webkit-scrollbar-track]:bg-transparent",
                     "[&::-webkit-scrollbar-thumb]:rounded-full",

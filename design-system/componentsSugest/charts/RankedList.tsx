@@ -70,7 +70,7 @@ function RankedRow({ item, index }: { item: RankedItem; index: number }) {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-export function RankedList() {
+export function RankedList({ chartHeight = 300 }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6">
@@ -82,7 +82,7 @@ export function RankedList() {
                         Visualizações por produto — últimos 30 dias
                     </p>
                 </div>
-                <div className="flex flex-col -mx-3">
+                <div className="flex flex-col -mx-3" style={{ maxHeight: chartHeight, overflowY: "auto" }}>
                     {DATA.map((item, i) => (
                         <RankedRow key={item.rank} item={item} index={i} />
                     ))}

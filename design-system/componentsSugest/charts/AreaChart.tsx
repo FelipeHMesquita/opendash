@@ -136,7 +136,7 @@ function ChartLegend({ payload }: CustomLegendProps) {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-export function AreaChart() {
+export function AreaChart({ chartHeight = 300 }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6">
@@ -148,7 +148,7 @@ export function AreaChart() {
                         Sessões, pageviews e conversões — últimas 8 semanas
                     </p>
                 </div>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
                     <RechartsAreaChart data={DATA}>
                         <defs>
                             {SERIES.map((s) => (

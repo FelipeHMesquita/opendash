@@ -133,7 +133,7 @@ function ChartLegend({ payload }: CustomLegendProps) {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-export function LineChart() {
+export function LineChart({ chartHeight = 300 }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6">
@@ -145,7 +145,7 @@ export function LineChart() {
                         Visualizações diárias — últimos 7 dias
                     </p>
                 </div>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
                     <RechartsLineChart data={DATA}>
                         <CartesianGrid
                             strokeDasharray="3 3"

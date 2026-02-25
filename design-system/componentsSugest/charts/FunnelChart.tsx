@@ -29,7 +29,7 @@ function fmtK(v: number): string {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-export function FunnelChart() {
+export function FunnelChart({ chartHeight = 300 }: { chartHeight?: number }) {
     const containerRef = React.useRef<HTMLDivElement>(null)
     const [width, setWidth] = React.useState(600)
 
@@ -48,7 +48,7 @@ export function FunnelChart() {
 
     // Layout constants
     const PAD    = { top: 40, right: 56, bottom: 40, left: 8 }
-    const chartH = 220
+    const chartH = Math.max(100, chartHeight - PAD.top - PAD.bottom)
     const totalH = PAD.top + chartH + PAD.bottom
     const chartW = width - PAD.left - PAD.right
     const N      = DATA.length

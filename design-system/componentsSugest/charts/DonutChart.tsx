@@ -103,7 +103,7 @@ function ChartLegend({ payload }: CustomLegendProps) {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-export function DonutChart() {
+export function DonutChart({ chartHeight = 300 }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6">
@@ -115,7 +115,7 @@ export function DonutChart() {
                         Distribuição — Nov 2024
                     </p>
                 </div>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
                     <PieChart>
                         <text
                             x="50%"

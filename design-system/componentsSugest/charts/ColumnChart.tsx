@@ -162,7 +162,7 @@ function ChartTooltipV2({ active, payload, label }: CustomTooltipProps) {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-export function ColumnChart() {
+export function ColumnChart({ chartHeight = 300 }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6">
@@ -174,7 +174,7 @@ export function ColumnChart() {
                         Comparativo mensal — 2024
                     </p>
                 </div>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
                     <BarChart data={DATA} barCategoryGap="20%" barGap={4}>
                         <CartesianGrid
                             strokeDasharray="3 3"
@@ -225,7 +225,7 @@ export function ColumnChart() {
 //   · axisStyleV2: fontSize 12 (text-xs = caption, orientar sem competir)
 //   · ChartTooltipV2: label xs/muted + valor sm/semibold (hierarquia clara no hover)
 
-export function ColumnChartV2() {
+export function ColumnChartV2({ chartHeight = 300 }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6">
@@ -237,7 +237,7 @@ export function ColumnChartV2() {
                         Comparativo mensal — 2024
                     </p>
                 </div>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
                     <BarChart data={DATA} barCategoryGap="20%" barGap={4}>
                         <CartesianGrid
                             strokeDasharray="3 3"

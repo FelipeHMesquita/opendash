@@ -52,6 +52,17 @@ function PanelLeftIcon() {
     )
 }
 
+function BuilderIcon() {
+    return (
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+        </svg>
+    )
+}
+
 function BagIcon({ className }: { className?: string }) {
     return (
         <svg
@@ -304,6 +315,15 @@ export function ThemePreview({
             {/* Spacer */}
             <div className="flex-1" />
 
+            {/* Dashboard Builder link */}
+            <Link
+                href="/styleguide/dashboard-builder"
+                className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+            >
+                <BuilderIcon />
+                Builder
+            </Link>
+
             {/* Add to cart button */}
             {slug && (
                 <button
@@ -337,9 +357,8 @@ export function ThemePreview({
         </div>
     )
 
-    const activeElement = (activeVariantIdx > 0 && chartVariants[activeVariantIdx])
-        ? chartVariants[activeVariantIdx].element
-        : children
+    const activeVariantEntry = activeVariantIdx > 0 ? chartVariants[activeVariantIdx] : null
+    const activeElement = activeVariantEntry ? activeVariantEntry.element : children
 
     // Content area: max-width constrains the component to the specified content area width.
     // Centering simulates how the component sits inside a product layout (sidebar + content area).
@@ -352,6 +371,14 @@ export function ThemePreview({
                 marginRight: "auto",
             }}
         >
+            {activeVariantEntry && (
+                <div className="flex items-center gap-2 px-8 pt-4">
+                    <span className="inline-flex items-center gap-1.5 rounded border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
+                        {activeVariantEntry.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">variação ativa</span>
+                </div>
+            )}
             {activeElement}
         </div>
     )
