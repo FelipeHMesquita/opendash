@@ -73,14 +73,14 @@ export function BillingPage() {
                                     </span>
                                 )}
                             </div>
-                            <p className="mt-4 text-2xl font-bold text-foreground">
+                            <p className="mt-4 text-2xl font-semibold text-foreground">
                                 {plan.price}
                                 <span className="text-sm font-normal text-muted-foreground">/mês</span>
                             </p>
                             <ul className="mt-4 space-y-2">
                                 {plan.features.map(f => (
                                     <li key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                                        <Check className="h-3.5 w-3.5 shrink-0 text-success" />
                                         {f}
                                     </li>
                                 ))}
@@ -118,7 +118,7 @@ export function BillingPage() {
             <section className="space-y-4">
                 <h3 className="text-sm font-semibold text-foreground">Histórico de cobranças</h3>
                 <div className="overflow-hidden rounded-lg border border-border bg-card">
-                    <div className="divide-y divide-white/5">
+                    <div className="divide-y divide-border">
                         {invoices.map(inv => (
                             <div key={inv.id} className="flex items-center justify-between px-5 py-4 transition-colors hover:bg-accent/30">
                                 <div>
@@ -127,7 +127,7 @@ export function BillingPage() {
                                 </div>
                                 <div className="flex items-center gap-6">
                                     <span className="text-sm text-foreground">{inv.amount}</span>
-                                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-500">{inv.status}</span>
+                                    <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">{inv.status}</span>
                                     <Button variant="ghost" size="icon-sm">
                                         <Download className="h-3.5 w-3.5" />
                                     </Button>

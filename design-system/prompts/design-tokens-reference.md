@@ -41,6 +41,83 @@ Para as variáveis ausentes no print, o padrão é derivar por coerência com o 
 
 ---
 
+## Regras Globais Invioláveis
+
+Estas regras se aplicam a **toda a interface** — não apenas a uma camada específica. Nenhum componente, mock ou preview pode violá-las.
+
+### Mínimo tipográfico global
+
+O tamanho mínimo de texto renderizado para o usuário final é `text-xs` (12px). Valores abaixo de 12px (`text-[10px]`, `text-[11px]`, `text-[9px]`) só são permitidos em **chrome de ferramenta** (UI de builder, controles de IDE, badges de status de ferramenta) — nunca em conteúdo que representa a interface do produto.
+
+| Contexto | Mínimo | Justificativa |
+|---|---|---|
+| Texto de conteúdo (tabelas, cards, listas) | `text-xs` (12px) | Legibilidade baseline |
+| Navegação (navbar, sidebar, breadcrumbs) | `text-sm` (14px) | Navegação é funcional, não decorativa |
+| Gráficos (eixos, legendas, tooltips) | `text-xs` (12px) | Orientação visual sem competir com dados |
+| Chrome de ferramenta (builder, IDE) | sem mínimo | Não é output do produto |
+
+### Valores arbitrários proibidos no output
+
+Nunca usar `text-[Npx]` com valores customizados no output do produto. Apenas as classes da escala Tailwind são permitidas: `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, etc. Valores como `text-[10px]`, `text-[11px]`, `text-[13px]` indicam que a decisão tipográfica foi feita por "ajuste visual" em vez de por função — isso quebra a coerência do sistema.
+
+### Cores semânticas obrigatórias
+
+Os tokens `--success`, `--destructive`, `--warning`, `--info` existem no globals.css para light e dark mode. Qualquer indicação de estado positivo/negativo/atenção/informação **deve** usar esses tokens — nunca nomes de cor Tailwind.
+
+| Errado | Correto | Quando |
+|---|---|---|
+| `text-emerald-500`, `bg-emerald-500/10` | `text-success`, `bg-success/10` | Status positivo, "Concluído", online |
+| `text-rose-500`, `bg-rose-500/10` | `text-destructive`, `bg-destructive/10` | Erro, alta prioridade, deletar |
+| `text-amber-400`, `bg-amber-500/10` | `text-warning`, `bg-warning/10` | Atenção, "Em revisão", prazo |
+| `text-blue-400`, `bg-blue-500/10` | `text-info`, `bg-info/10` | Informativo, "Em progresso" |
+| `bg-green-500` | `bg-success` | Indicador online |
+
+**Por que:** cores Tailwind hardcoded (`emerald`, `rose`, `amber`, `blue`) não respondem a troca de tema. Os tokens semânticos são calibrados para cada modo (light/dark) e mantêm contraste correto automaticamente.
+
+**Exceção:** cores usadas como identidade visual pura (avatar de departamento, ilustrações decorativas) podem ser hardcoded quando não carregam significado semântico de estado.
+
+### Hierarquia visual nunca invertida
+
+Num par header/body, o header é visualmente **igual ou mais forte** que o body. Nunca menor em tamanho sem compensação.
+
+**Em tabelas:** headers podem ser `text-xs` quando o body é `text-sm`, **apenas se** o header usar `uppercase tracking-wider` para compensar. Sem uppercase, o header deve ser `text-sm font-semibold`.
+
+| Padrão | Header | Body | Válido? |
+|---|---|---|---|
+| Header uppercase compacto | `text-xs/6 font-semibold uppercase tracking-wider` | `text-sm/6` | Sim |
+| Header mesmo nível | `text-sm/6 font-semibold` | `text-sm/6` | Sim |
+| Header menor sem compensação | `text-xs/6 font-semibold` (sem uppercase) | `text-sm/6` | **Não** |
+
+### Divisores e bordas por token
+
+Toda borda e divisor usa `border-border` ou `divide-border`. Nunca cores hardcoded.
+
+| Errado | Correto |
+|---|---|
+| `divide-white/5` | `divide-border` |
+| `divide-gray-800` | `divide-border` |
+| `border-white/10` | `border-border` |
+
+### Pesos tipográficos do sistema
+
+O sistema usa 3 pesos. Componentes de output não devem usar outros.
+
+| Peso | Classe | Uso |
+|---|---|---|
+| 400 | `font-normal` | Corpo de texto, dados de tabela, descrições |
+| 500 | `font-medium` | Ênfase sutil — item ativo, valor em tabela, nome em lista |
+| 600 | `font-semibold` | Títulos, headings, valores de destaque (stat cards), table headers |
+
+`font-bold` (700) só é permitido em elementos decorativos (iniciais de logo/avatar, texto de error page). Nunca em dados, títulos ou navegação.
+
+### Inline styles na escala
+
+Quando uma library (Recharts, etc.) exige `fontSize` como prop numérica, o valor deve pertencer à escala: `12` (text-xs), `14` (text-sm), `16` (text-base), `18` (text-lg), `20` (text-xl).
+
+Valores como `fontSize: 11`, `fontSize: 13`, `fontSize: 15` são proibidos — indicam ajuste visual ad-hoc.
+
+---
+
 ## Camada 1 — Superfícies (Canvas)
 
 O "chão" da interface. Define a hierarquia de profundidade entre as camadas visuais.
@@ -138,6 +215,17 @@ Linguagem universal de feedback do sistema. Estável entre temas — não carreg
 - `--info-foreground`
   - Texto sobre fundo info.
 
+### Anti-patterns — cores semânticas
+
+Nunca usar nomes de cor Tailwind para estados. Os tokens existem no globals.css para light e dark mode. (Ver também: "Regras Globais Invioláveis — Cores semânticas obrigatórias".)
+
+| Estado | Token correto | Erros comuns encontrados |
+|---|---|---|
+| Sucesso / positivo / online | `text-success`, `bg-success/10` | `emerald-500`, `emerald-400`, `green-500` |
+| Erro / destrutivo / alta prioridade | `text-destructive`, `bg-destructive/10` | `rose-500`, `rose-400` |
+| Atenção / revisão / prazo | `text-warning`, `bg-warning/10` | `amber-500`, `amber-400` |
+| Informativo / em progresso | `text-info`, `bg-info/10` | `blue-500`, `blue-400` |
+
 ---
 
 ## Camada 5 — Sidebar (Shell de Navegação)
@@ -167,6 +255,21 @@ Subsistema independente. A sidebar pode ter elevação e cor de ação próprias
 
 - `--sidebar-ring`
   - Outline de foco dentro da sidebar.
+
+### Tipografia da navegação
+
+A sidebar e a navbar são contextos de leitura rápida — o usuário faz scan, não leitura. Os tamanhos devem ser proporcionais ao conteúdo principal.
+
+| Elemento | Classe | Peso | Cor |
+|---|---|---|---|
+| Item de nav (navbar/sidebar) | `text-sm` | `font-normal` | `text-muted-foreground` / `text-sidebar-foreground` |
+| Item ativo | `text-sm` | `font-medium` | `text-foreground` / `text-sidebar-primary-foreground` |
+| Grupo/seção label | `text-xs` | `font-semibold uppercase tracking-wider` | `text-muted-foreground` |
+| Logo / nome do app | `text-sm` | `font-semibold` | `text-foreground` |
+
+**Por que `text-sm` e não `text-xs`:** a seção "Tipografia — Escala por Função" define `text-sm` como o nível para "navegação secundária". Itens de sidebar e navbar são navegação funcional — precisam ser lidos sem esforço. `text-xs` (12px) é para captions e metadata, não para elementos clicáveis de navegação.
+
+**Regra de proporção:** se o corpo do conteúdo principal usa `text-sm` (14px), a navegação deve usar no mínimo `text-sm`. Se o corpo usa `text-base` (16px), a navegação pode usar `text-sm`. A navegação nunca deve ser menor que o corpo do conteúdo por mais de um nível da escala.
 
 ---
 
@@ -202,9 +305,26 @@ Gráficos têm sua própria hierarquia tipográfica interna, aplicando o mesmo p
 | Título do card do gráfico | h3 | `text-sm / semibold` | Separar a seção visualmente |
 | Subtítulo / período | caption | `text-xs / muted` | Suporte — escopo temporal ou descrição |
 
-**Regra crítica:** usar `font-size` abaixo de `12px` em qualquer elemento de gráfico quebra a escala do sistema. `11px` é um valor rogue que não existe na escala e prejudica a coerência. O mínimo é `text-xs` = 12px.
+**Regra crítica:** usar `font-size` abaixo de `12px` em qualquer elemento de gráfico quebra a escala do sistema. `11px` é um valor rogue que não existe na escala e prejudica a coerência. O mínimo é `text-xs` = 12px. (Esta regra é um caso específico da regra global — ver "Regras Globais Invioláveis" acima.)
 
 **Tamanho carrega impacto, cor carrega significado** — em stat cards, os números grandes são brancos neutros (impacto pelo tamanho). Os indicadores de tendência usam `--success` / `--destructive` (significado pela cor). Os dois não precisam operar juntos no mesmo elemento.
+
+### Coerência entre gráficos e layout de navegação
+
+Quando um gráfico está dentro de um layout com navbar e/ou sidebar, a hierarquia tipográfica precisa funcionar em conjunto. O princípio: navegação e títulos de gráfico compartilham o mesmo nível de tamanho (`text-sm`), diferenciados por **peso** e **cor** — nunca por tamanho.
+
+| Camada | Elemento | Tamanho | Peso | Cor | Papel |
+|---|---|---|---|---|---|
+| Navegação | Item de nav (navbar/sidebar) | `text-sm` | normal / medium | muted-foreground | Scan rápido |
+| Gráfico | Título do card | `text-sm/6` | semibold | foreground | Identificar a seção |
+| Gráfico | Subtítulo | `text-xs` | normal | muted-foreground | Contexto temporal |
+| Gráfico | Eixos e legendas | `text-xs` / `fontSize: 12` | normal | muted-foreground | Suporte visual |
+| Gráfico | Tooltip — label | `text-xs` | medium | muted-foreground | Nome da série |
+| Gráfico | Tooltip — valor | `text-sm` | semibold | foreground | Dado principal |
+
+**Por que funciona:** o título do gráfico (`text-sm semibold foreground`) se destaca da navegação (`text-sm normal muted-foreground`) sem precisar ser maior. O peso e a cor criam hierarquia suficiente dentro do mesmo nível de tamanho. Os valores de tooltip seguem a mesma lógica — `text-sm semibold` para o dado primário, `text-xs` para o contexto.
+
+**Regra inviolável:** todos os tooltips de valor em gráficos devem usar `text-sm font-semibold tabular-nums`. Usar `text-xs` para valores de tooltip quebra a hierarquia — o dado principal fica no mesmo nível visual que o label de suporte.
 
 ---
 
@@ -289,6 +409,18 @@ Se precisa separar visualmente uma seção → `h3` ou acima
 Se precisa ser lido primeiro → `h1`
 Se é intenção antes de informação → `display`
 
+### Hierarquia em tabelas
+
+Table headers diferenciam-se do body por **peso e cor**, não por tamanho. Se o header for menor que o body, `uppercase tracking-wider` é obrigatório para compensar.
+
+| Elemento | Classe | Lógica |
+|---|---|---|
+| Header (compacto) | `text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground` | Menor que body → uppercase compensa |
+| Header (mesmo nível) | `text-sm/6 font-semibold text-muted-foreground` | Mesmo tamanho → peso diferencia |
+| Body (primário) | `text-sm/6 font-medium text-foreground` | Dado principal |
+| Body (secundário) | `text-sm/6 text-muted-foreground` | Dado de suporte |
+| Body (caption) | `text-xs/6 text-muted-foreground` | Timestamp, metadata |
+
 ---
 
 ## Temas Superficiais vs. Autônomos
@@ -332,6 +464,21 @@ Exemplos de uso aceitável: dashboards analytics, páginas de conteúdo, galeria
 
 ### Temas autônomos (35 vars) — quando são necessários
 
-Quando a interface inclui sidebar de navegação, formulários com inputs, dropdowns frequentes ou estados semânticos proeminentes, as variáveis não cobertas ficam visualmente desconexas do tema. Um tema "Ember" (laranja quente) com sidebar branca do globals.css é inconsistente.
+Quando a interface inclui sidebar de navegação, formulários com inputs, dropdowns frequentes ou estados semânticos proeminentes, as variáveis não cobertas ficam visualmente desconexas do tema.
 
 Para temas completamente autônomos, cada objeto de tema precisa definir todas as 35 variáveis — ou o sistema de aplicação precisa resetar os valores não cobertos para um padrão derivado automaticamente do tema.
+
+### Curadoria de temas — regra de não-conflito semântico
+
+Os temas parciais (12 vars) controlam `--primary` mas **não** controlam as cores semânticas (`--success`, `--warning`, `--info`, `--destructive`), que são fixas no globals.css. Isso cria uma restrição: o `--primary` de cada tema não pode cair na mesma faixa de hue de uma cor semântica, ou o sistema perde significado.
+
+| Cor semântica | Hue | Zona proibida para --primary |
+|---|---|---|
+| `--success` | H 142 (verde) | H 120–165 |
+| `--warning` | H 71 (âmbar) | H 50–90 |
+| `--info` | H 245 (azul) | Tolerável — primary e info operam em contextos distintos (ação vs. estado) |
+| `--destructive` | H 25 (vermelho) | H 10–40 |
+
+**Temas ativos (7):** Light, Dark, Graphite, Midnight, Amethyst, Ocean, VSCode — todos com --primary fora das zonas proibidas.
+
+**Regra para novos temas:** antes de adicionar um tema, verificar que o hue do --primary não cai em nenhuma zona proibida. Se cair, o tema cria confusão visual entre ações primárias e estados semânticos (ex: botão primary indistinguível de badge success).

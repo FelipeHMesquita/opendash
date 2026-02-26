@@ -50,7 +50,7 @@ export function OnboardingPage() {
                             >
                                 <div className={cn(
                                     "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                                    done   ? "bg-emerald-500 text-white" :
+                                    done   ? "bg-success text-success-foreground" :
                                     active ? "bg-primary text-primary-foreground" :
                                              "border border-border text-muted-foreground"
                                 )}>
@@ -143,10 +143,10 @@ export function OnboardingPage() {
                                 <h1 className="text-2xl font-semibold text-foreground">Tudo pronto!</h1>
                                 <p className="mt-2 text-sm text-muted-foreground">Seu workspace está configurado. Explore a plataforma.</p>
                             </div>
-                            <div className="flex h-24 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/5">
+                            <div className="flex h-24 items-center justify-center rounded-lg border border-success/20 bg-success/5">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500">
-                                        <Check className="h-4 w-4 text-white" />
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-success">
+                                        <Check className="h-4 w-4 text-success-foreground" />
                                     </div>
                                     <p className="text-sm font-medium text-foreground">Workspace criado com sucesso</p>
                                 </div>

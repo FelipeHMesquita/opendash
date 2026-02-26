@@ -71,9 +71,9 @@ export function UIShowcase() {
                     <Badge variant="outline">Outline</Badge>
                     <Badge variant="destructive">Destructive</Badge>
                     <Badge variant="ghost">Ghost</Badge>
-                    <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Ativo</Badge>
-                    <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20">Pendente</Badge>
-                    <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                    <Badge className="bg-success/10 text-success border-success/20">Ativo</Badge>
+                    <Badge className="bg-warning/10 text-warning border-warning/20">Pendente</Badge>
+                    <Badge className="bg-info/10 text-info border-info/20">
                         <Zap className="size-3" />
                         Pro
                     </Badge>
@@ -113,7 +113,7 @@ export function UIShowcase() {
                     {/* With online badge */}
                     <Avatar size="lg">
                         <AvatarFallback>CM</AvatarFallback>
-                        <AvatarBadge className="bg-emerald-500" />
+                        <AvatarBadge className="bg-success" />
                     </Avatar>
 
                     {/* Group */}
@@ -238,7 +238,7 @@ export function UIShowcase() {
                         <CardContent className="space-y-3">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Status</span>
-                                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Ativo</Badge>
+                                <Badge className="bg-success/10 text-success border-success/20">Ativo</Badge>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Plano</span>

@@ -8,9 +8,8 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities"
 import { cn } from "@/lib/utils"
 import {
-    type Page, type PageId, type NavLink, type BuilderAction,
-    buildTree, flattenTree, type TreeNode, newPageId,
-    MOCK_NAVBAR_ITEMS, MOCK_SIDEBAR_ITEMS,
+    type Page, type PageId, type NavItem, type BuilderAction,
+    buildTree, flattenTree, type TreeNode, newPageId, newId,
 } from "./_builder-state"
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
@@ -129,11 +128,12 @@ function SortablePageRow({
 // ─── Main sidebar component ─────────────────────────────────────────────────
 
 export function PageConfigSidebar({
-    pages, activePageId, navLinks, dispatch, onClose,
+    pages, activePageId, navbarItems, sidebarItems, dispatch, onClose,
 }: {
     pages: Page[]
     activePageId: PageId
-    navLinks: NavLink[]
+    navbarItems: NavItem[]
+    sidebarItems: NavItem[]
     dispatch: React.Dispatch<BuilderAction>
     onClose: () => void
 }) {
@@ -244,7 +244,7 @@ export function PageConfigSidebar({
             </div>
 
             {/* Nav links section */}
-            <NavLinksSection pages={pages} navLinks={navLinks} dispatch={dispatch} />
+            <NavLinksSection pages={pages} navbarItems={navbarItems} sidebarItems={sidebarItems} dispatch={dispatch} />
         </aside>
     )
 }
@@ -252,22 +252,10 @@ export function PageConfigSidebar({
 // ─── Navigation links section ───────────────────────────────────────────────
 
 function NavLinksSection({
-    pages, navLinks, dispatch,
+    pages, navbarItems, sidebarItems, dispatch,
 }: {
-    pages: Page[]; navLinks: NavLink[]; dispatch: React.Dispatch<BuilderAction>
+    pages: Page[]; navbarItems: NavItem[]; sidebarItems: NavItem[]; dispatch: React.Dispatch<BuilderAction>
 }) {
-    function getLinkedPageId(sourceType: NavLink["sourceType"], label: string): PageId | "" {
-        return navLinks.find(l => l.sourceType === sourceType && l.sourceItemLabel === label)?.targetPageId ?? ""
-    }
-
-    function handleLinkChange(sourceType: NavLink["sourceType"], label: string, pageId: string) {
-        if (pageId === "") {
-            dispatch({ type: "REMOVE_NAV_LINK", sourceType, sourceItemLabel: label })
-        } else {
-            dispatch({ type: "SET_NAV_LINK", link: { sourceType, sourceItemLabel: label, targetPageId: pageId } })
-        }
-    }
-
     return (
         <div className="border-t border-border px-4 py-3 shrink-0">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">Navegação</p>
@@ -275,19 +263,17 @@ function NavLinksSection({
             <div className="space-y-3">
                 <NavLinkGroup
                     title="Navbar"
-                    sourceType="mock-navbar"
-                    items={MOCK_NAVBAR_ITEMS}
+                    target="navbar"
+                    items={navbarItems}
                     pages={pages}
-                    getLinkedPageId={getLinkedPageId}
-                    onChange={handleLinkChange}
+                    dispatch={dispatch}
                 />
                 <NavLinkGroup
                     title="Sidebar"
-                    sourceType="mock-sidebar"
-                    items={MOCK_SIDEBAR_ITEMS}
+                    target="sidebar"
+                    items={sidebarItems}
                     pages={pages}
-                    getLinkedPageId={getLinkedPageId}
-                    onChange={handleLinkChange}
+                    dispatch={dispatch}
                 />
             </div>
         </div>
@@ -295,40 +281,52 @@ function NavLinksSection({
 }
 
 function NavLinkGroup({
-    title, sourceType, items, pages, getLinkedPageId, onChange,
+    title, target, items, pages, dispatch,
 }: {
     title: string
-    sourceType: NavLink["sourceType"]
-    items: readonly string[]
+    target: "navbar" | "sidebar"
+    items: NavItem[]
     pages: Page[]
-    getLinkedPageId: (sourceType: NavLink["sourceType"], label: string) => PageId | ""
-    onChange: (sourceType: NavLink["sourceType"], label: string, pageId: string) => void
+    dispatch: React.Dispatch<BuilderAction>
 }) {
     return (
         <div>
             <p className="text-[10px] text-muted-foreground/60 mb-1.5">{title}</p>
             <div className="space-y-1">
-                {items.map(label => {
-                    const linked = getLinkedPageId(sourceType, label)
-                    return (
-                        <div key={label} className="flex items-center gap-2">
-                            <span className="text-[10px] text-muted-foreground w-20 truncate shrink-0">{label}</span>
-                            <select
-                                value={linked}
-                                onChange={e => onChange(sourceType, label, e.target.value)}
-                                className={cn(
-                                    "flex-1 h-5 rounded border bg-background px-1 text-[10px] outline-none transition-colors",
-                                    linked ? "border-primary/30 text-foreground" : "border-border text-muted-foreground/50",
-                                )}
-                            >
-                                <option value="">— nenhum —</option>
-                                {pages.map(p => (
-                                    <option key={p.id} value={p.id}>{p.label}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )
-                })}
+                {items.map(item => (
+                    <div key={item.id} className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground w-20 truncate shrink-0">{item.label}</span>
+                        <select
+                            value={item.targetPageId ?? ""}
+                            onChange={e => {
+                                const pageId = e.target.value || null
+                                dispatch({ type: "UPDATE_NAV_ITEM", target, itemId: item.id, targetPageId: pageId })
+                            }}
+                            className={cn(
+                                "flex-1 h-5 rounded border bg-background px-1 text-[10px] outline-none transition-colors",
+                                item.targetPageId ? "border-primary/30 text-foreground" : "border-border text-muted-foreground/50",
+                            )}
+                        >
+                            <option value="">— nenhum —</option>
+                            {pages.map(p => (
+                                <option key={p.id} value={p.id}>{p.label}</option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={() => dispatch({ type: "REMOVE_NAV_ITEM", target, itemId: item.id })}
+                            className="shrink-0 flex h-4 w-4 items-center justify-center rounded text-muted-foreground/40 hover:text-destructive transition-colors"
+                            title="Remover"
+                        >
+                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                ))}
+                <button
+                    onClick={() => dispatch({ type: "ADD_NAV_ITEM", target, item: { id: newId(), label: target === "navbar" ? "navlink" : "sidelink", targetPageId: null } })}
+                    className="flex items-center gap-1 text-[10px] text-muted-foreground/40 hover:text-primary transition-colors mt-1"
+                >
+                    <PlusSmIcon /> adicionar
+                </button>
             </div>
         </div>
     )

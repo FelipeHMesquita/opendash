@@ -17,9 +17,9 @@ function getStrength(password: string): { score: number; label: string; color: s
     if (/[0-9]/.test(password)) score++
     if (/[^A-Za-z0-9]/.test(password)) score++
 
-    if (score <= 1) return { score: 1, label: "Fraca",  color: "bg-rose-500" }
-    if (score <= 3) return { score: 3, label: "Média",  color: "bg-amber-400" }
-    return              { score: 5, label: "Forte",  color: "bg-emerald-500" }
+    if (score <= 1) return { score: 1, label: "Fraca",  color: "bg-destructive" }
+    if (score <= 3) return { score: 3, label: "Média",  color: "bg-warning" }
+    return              { score: 5, label: "Forte",  color: "bg-success" }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ export function SignUpPage() {
                                         />
                                     ))}
                                 </div>
-                                <p className="text-[11px] text-muted-foreground">
+                                <p className="text-xs text-muted-foreground">
                                     Força da senha: <span className="font-medium text-foreground">{strength.label}</span>
                                 </p>
                             </div>

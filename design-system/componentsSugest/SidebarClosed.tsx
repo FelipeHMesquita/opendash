@@ -51,7 +51,7 @@ export function SidebarClosed() {
                         <AvatarImage src="https://github.com/shadcn.png" alt="Olivia Rhye" />
                         <AvatarFallback>OR</AvatarFallback>
                     </Avatar>
-                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
+                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-success ring-2 ring-background" />
                 </div>
             </div>
         </aside>

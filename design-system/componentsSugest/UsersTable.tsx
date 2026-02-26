@@ -45,10 +45,10 @@ export function UsersTable() {
                 <Table>
                     <TableHeader>
                         <TableRow className="border-border hover:bg-transparent">
-                            <TableHead className="px-3 py-4 text-xs/6 font-semibold text-muted-foreground">Name</TableHead>
-                            <TableHead className="px-3 py-4 text-xs/6 font-semibold text-muted-foreground">Title</TableHead>
-                            <TableHead className="px-3 py-4 text-xs/6 font-semibold text-muted-foreground">Email</TableHead>
-                            <TableHead className="px-3 py-4 text-xs/6 font-semibold text-muted-foreground">Role</TableHead>
+                            <TableHead className="px-3 py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">Name</TableHead>
+                            <TableHead className="px-3 py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">Title</TableHead>
+                            <TableHead className="px-3 py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">Email</TableHead>
+                            <TableHead className="px-3 py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">Role</TableHead>
                             <TableHead className="px-3 py-4 text-right" />
                         </TableRow>
                     </TableHeader>

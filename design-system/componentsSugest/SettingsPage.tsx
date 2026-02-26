@@ -150,7 +150,7 @@ function LimitRow({ label, value, progress = 0, noRing = false }: { label: strin
                         </svg>
                         {/* Progress circle (Success/Primary color) */}
                         {progress > 0 && (
-                            <svg className="absolute inset-0 h-full w-full -rotate-90 text-emerald-500" viewBox="0 0 36 36">
+                            <svg className="absolute inset-0 h-full w-full -rotate-90 text-success" viewBox="0 0 36 36">
                                 <path strokeDasharray={`${progress}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor" strokeWidth="4" fill="none" />
                             </svg>
                         )}

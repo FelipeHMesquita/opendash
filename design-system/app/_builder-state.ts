@@ -92,10 +92,13 @@ export type ChartPaletteEntry = PaletteEntry
 export const LAYOUT_IDS = new Set(["navbar-comp", "sidebar-comp"])
 export function isLayoutComponent(chartId: string) { return LAYOUT_IDS.has(chartId) }
 
-// ─── Mock navigation item labels ──────────────────────────────────────────────
+// ─── Navigation items ────────────────────────────────────────────────────────
 
-export const MOCK_NAVBAR_ITEMS = ["Dashboard", "Relatórios", "Vendas", "Config"]
-export const MOCK_SIDEBAR_ITEMS = ["Início", "Dashboard", "Análises", "Relatórios", "Usuários", "Produtos", "Config."]
+export interface NavItem {
+    id: string
+    label: string
+    targetPageId: PageId | null
+}
 
 // ─── Canvas item ──────────────────────────────────────────────────────────────
 
@@ -117,12 +120,6 @@ export interface Page {
     canvasItems: CanvasItem[]
 }
 
-export interface NavLink {
-    sourceType: "mock-navbar" | "mock-sidebar"
-    sourceItemLabel: string
-    targetPageId: PageId
-}
-
 export interface TreeNode extends Page {
     children: TreeNode[]
     depth: number
@@ -133,7 +130,8 @@ export interface TreeNode extends Page {
 export interface BuilderState {
     pages: Page[]
     activePageId: PageId
-    navLinks: NavLink[]
+    navbarItems: NavItem[]
+    sidebarItems: NavItem[]
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -245,9 +243,10 @@ export type BuilderAction =
     | { type: "SPLICE_ITEM"; item: CanvasItem; insertIdx: number }
     | { type: "SET_ITEMS"; items: CanvasItem[] }
     | { type: "SYNC_LAYOUT_COLS"; gridCols: number }
-    // Nav links
-    | { type: "SET_NAV_LINK"; link: NavLink }
-    | { type: "REMOVE_NAV_LINK"; sourceType: NavLink["sourceType"]; sourceItemLabel: string }
+    // Nav items
+    | { type: "ADD_NAV_ITEM"; target: "navbar" | "sidebar"; item: NavItem }
+    | { type: "REMOVE_NAV_ITEM"; target: "navbar" | "sidebar"; itemId: string }
+    | { type: "UPDATE_NAV_ITEM"; target: "navbar" | "sidebar"; itemId: string; label?: string; targetPageId?: PageId | null }
 
 export function builderReducer(state: BuilderState, action: BuilderAction): BuilderState {
     switch (action.type) {
@@ -263,11 +262,14 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
             const toRemove = new Set([action.pageId, ...getDescendantIds(state.pages, action.pageId)])
             const filtered = state.pages.filter(p => !toRemove.has(p.id))
             if (filtered.length === 0) return state  // prevent deleting all pages
+            const clearTarget = (items: NavItem[]) =>
+                items.map(i => toRemove.has(i.targetPageId!) ? { ...i, targetPageId: null } : i)
             return {
                 ...state,
                 pages: filtered,
                 activePageId: toRemove.has(state.activePageId) ? filtered[0].id : state.activePageId,
-                navLinks: state.navLinks.filter(l => !toRemove.has(l.targetPageId)),
+                navbarItems: clearTarget(state.navbarItems),
+                sidebarItems: clearTarget(state.sidebarItems),
             }
         }
         case "RENAME_PAGE":
@@ -344,26 +346,43 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
             return {
                 ...state,
                 pages: state.pages.map(page => {
-                    const needsUpdate = page.canvasItems.some(i => isLayoutComponent(i.chartId) && i.colSpan !== action.gridCols)
+                    const needsUpdate = page.canvasItems.some(i =>
+                        isLayoutComponent(i.chartId) ? i.colSpan !== action.gridCols : i.colSpan > action.gridCols
+                    )
                     if (!needsUpdate) return page
-                    return { ...page, canvasItems: page.canvasItems.map(i => isLayoutComponent(i.chartId) ? { ...i, colSpan: action.gridCols } : i) }
+                    return {
+                        ...page,
+                        canvasItems: page.canvasItems.map(i => {
+                            if (isLayoutComponent(i.chartId)) return { ...i, colSpan: action.gridCols }
+                            if (i.colSpan > action.gridCols) return { ...i, colSpan: action.gridCols }
+                            return i
+                        }),
+                    }
                 }),
             }
 
-        // ── Nav links ────────────────────────────────────────────────────────
-        case "SET_NAV_LINK": {
-            const filtered = state.navLinks.filter(l =>
-                !(l.sourceType === action.link.sourceType && l.sourceItemLabel === action.link.sourceItemLabel)
-            )
-            return { ...state, navLinks: [...filtered, action.link] }
+        // ── Nav items ────────────────────────────────────────────────────────
+        case "ADD_NAV_ITEM": {
+            const key = action.target === "navbar" ? "navbarItems" : "sidebarItems"
+            return { ...state, [key]: [...state[key], action.item] }
         }
-        case "REMOVE_NAV_LINK":
+        case "REMOVE_NAV_ITEM": {
+            const key = action.target === "navbar" ? "navbarItems" : "sidebarItems"
+            return { ...state, [key]: state[key].filter(i => i.id !== action.itemId) }
+        }
+        case "UPDATE_NAV_ITEM": {
+            const key = action.target === "navbar" ? "navbarItems" : "sidebarItems"
             return {
                 ...state,
-                navLinks: state.navLinks.filter(l =>
-                    !(l.sourceType === action.sourceType && l.sourceItemLabel === action.sourceItemLabel)
+                [key]: state[key].map(i =>
+                    i.id !== action.itemId ? i : {
+                        ...i,
+                        ...(action.label !== undefined && { label: action.label }),
+                        ...(action.targetPageId !== undefined && { targetPageId: action.targetPageId }),
+                    }
                 ),
             }
+        }
 
         default:
             return state
@@ -377,6 +396,32 @@ export function createInitialState(): BuilderState {
     return {
         pages: [{ id: firstId, parentId: null, label: "Página 1", canvasItems: [] }],
         activePageId: firstId,
-        navLinks: [],
+        navbarItems: [],
+        sidebarItems: [],
+    }
+}
+
+/** Migrate legacy persisted data (navLinks → navbarItems/sidebarItems) */
+export function migrateState(raw: Record<string, unknown>): BuilderState {
+    const state = raw as unknown as BuilderState
+    // Already migrated
+    if (Array.isArray(state.navbarItems)) return state
+    // Legacy format: navLinks array
+    const legacyLinks = (raw as { navLinks?: { sourceType: string; sourceItemLabel: string; targetPageId: string }[] }).navLinks
+    const navbarItems: NavItem[] = []
+    const sidebarItems: NavItem[] = []
+    if (Array.isArray(legacyLinks)) {
+        for (const l of legacyLinks) {
+            const item: NavItem = { id: newId(), label: l.sourceItemLabel, targetPageId: l.targetPageId }
+            if (l.sourceType === "mock-navbar") navbarItems.push(item)
+            else sidebarItems.push(item)
+        }
+    }
+    // No default items — user adds links via "+ adicionar link"
+    return {
+        pages: state.pages,
+        activePageId: state.activePageId,
+        navbarItems,
+        sidebarItems,
     }
 }

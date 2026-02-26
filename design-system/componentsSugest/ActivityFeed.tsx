@@ -8,14 +8,14 @@ import { Button } from "@/components/ui/button"
 const activities = [
     {
         id: 1, group: "Hoje",
-        icon: UserPlus, color: "bg-blue-500/10 text-blue-400",
+        icon: UserPlus, color: "bg-info/10 text-info",
         title: "Novo usuário adicionado",
         description: "Alice Monteiro foi convidada para o workspace",
         time: "Agora mesmo",
     },
     {
         id: 2, group: "Hoje",
-        icon: CheckCircle2, color: "bg-emerald-500/10 text-emerald-400",
+        icon: CheckCircle2, color: "bg-success/10 text-success",
         title: "Deploy concluído",
         description: "Versão 2.4.1 publicada em produção sem erros",
         time: "42 min atrás",
@@ -29,21 +29,21 @@ const activities = [
     },
     {
         id: 4, group: "Ontem",
-        icon: Settings, color: "bg-amber-500/10 text-amber-400",
+        icon: Settings, color: "bg-warning/10 text-warning",
         title: "Configurações alteradas",
         description: "Limite de rate limit atualizado para 20 req/s",
         time: "Ontem, 14:22",
     },
     {
         id: 5, group: "Ontem",
-        icon: CreditCard, color: "bg-emerald-500/10 text-emerald-400",
+        icon: CreditCard, color: "bg-success/10 text-success",
         title: "Pagamento processado",
         description: "Fatura #INV-2024-011 de R$ 89,00 paga com sucesso",
         time: "Ontem, 09:00",
     },
     {
         id: 6, group: "Mais antigo",
-        icon: AlertCircle, color: "bg-rose-500/10 text-rose-400",
+        icon: AlertCircle, color: "bg-destructive/10 text-destructive",
         title: "Limite próximo",
         description: "Uso de emails chegou a 85% do limite mensal",
         time: "01 Nov, 11:15",
@@ -75,7 +75,7 @@ export function ActivityFeed() {
                         <div key={group}>
                             <p className="mb-3 text-xs font-medium text-muted-foreground">{group}</p>
                             <div className="overflow-hidden rounded-lg border border-border bg-card">
-                                <div className="divide-y divide-white/5">
+                                <div className="divide-y divide-border">
                                     {items.map(item => {
                                         const Icon = item.icon
                                         return (

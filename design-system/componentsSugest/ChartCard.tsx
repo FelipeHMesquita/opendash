@@ -87,7 +87,7 @@ export function ChartCard() {
                         {avg}%
                         <span className="ml-2 text-sm font-normal text-muted-foreground">média</span>
                     </p>
-                    <span className="text-xs text-emerald-500">+12.4% vs período anterior</span>
+                    <span className="text-xs text-success">+12.4% vs período anterior</span>
                 </div>
 
             </div>

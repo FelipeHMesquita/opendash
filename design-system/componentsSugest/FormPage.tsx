@@ -127,7 +127,7 @@ export function FormPage() {
                             <CardDescription>Escolha quais notificações você quer receber por email.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="divide-y divide-white/5">
+                            <div className="divide-y divide-border">
                                 {[
                                     {
                                         id: "newsletter",

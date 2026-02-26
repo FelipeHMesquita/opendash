@@ -19,7 +19,7 @@ const columns = [
     },
     {
         id: "inprogress", title: "Em progresso",
-        color: "bg-blue-500/10 text-blue-400",
+        color: "bg-info/10 text-info",
         cards: [
             { id: "p1", title: "Dashboard de analytics v2",      priority: "Alta",  tag: "Dev"    },
             { id: "p2", title: "Testes de integração",           priority: "Alta",  tag: "QA"     },
@@ -27,7 +27,7 @@ const columns = [
     },
     {
         id: "review", title: "Revisão",
-        color: "bg-amber-500/10 text-amber-400",
+        color: "bg-warning/10 text-warning",
         cards: [
             { id: "r1", title: "Migração para PostgreSQL 16",    priority: "Alta",  tag: "Infra"  },
             { id: "r2", title: "Novo componente de upload",      priority: "Média", tag: "Design" },
@@ -35,7 +35,7 @@ const columns = [
     },
     {
         id: "done", title: "Concluído",
-        color: "bg-emerald-500/10 text-emerald-400",
+        color: "bg-success/10 text-success",
         cards: [
             { id: "d1", title: "Configurar CI/CD pipeline",      priority: "Alta",  tag: "Infra"  },
             { id: "d2", title: "Refactor auth module",           priority: "Alta",  tag: "Dev"    },
@@ -45,17 +45,17 @@ const columns = [
 ]
 
 const priorityColors: Record<string, string> = {
-    "Alta":  "text-rose-400",
-    "Média": "text-amber-400",
+    "Alta":  "text-destructive",
+    "Média": "text-warning",
     "Baixa": "text-muted-foreground",
 }
 
 const tagColors: Record<string, string> = {
     "Design": "bg-purple-500/10 text-purple-400",
-    "Dev":    "bg-blue-500/10 text-blue-400",
-    "QA":     "bg-amber-500/10 text-amber-400",
+    "Dev":    "bg-info/10 text-info",
+    "QA":     "bg-warning/10 text-warning",
     "Docs":   "bg-muted text-muted-foreground",
-    "Infra":  "bg-emerald-500/10 text-emerald-400",
+    "Infra":  "bg-success/10 text-success",
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────

@@ -10,7 +10,7 @@ import { SortableContext, useSortable, rectSortingStrategy, arrayMove } from "@d
 import { CSS } from "@dnd-kit/utilities"
 import { cn } from "@/lib/utils"
 import { themes, type ThemeName, ALL_THEMES, THEME_SWATCHES } from "./styleguide/_themes"
-import { ColumnChart, ColumnChartV2 } from "@/componentsSugest/charts/ColumnChart"
+import { ColumnChart } from "@/componentsSugest/charts/ColumnChart"
 import { HorizontalBarChart } from "@/componentsSugest/charts/HorizontalBarChart"
 import { AreaChart } from "@/componentsSugest/charts/AreaChart"
 import { LineChart } from "@/componentsSugest/charts/LineChart"
@@ -42,10 +42,10 @@ import { ErrorPage } from "@/componentsSugest/ErrorPage"
 import {
     CARD_OVERHEAD, DEVICE_PRESETS, type DeviceId,
     PALETTE_SECTIONS, CHART_PALETTE, type ChartPaletteEntry, type PaletteEntry,
-    isLayoutComponent, MOCK_NAVBAR_ITEMS, MOCK_SIDEBAR_ITEMS,
-    type CanvasItem, type Page, type NavLink, type PageId,
+    isLayoutComponent, type NavItem,
+    type CanvasItem, type Page, type PageId,
     computeRows, snapColSpan, snapHeight, newId, newPageId,
-    builderReducer, createInitialState, type BuilderAction,
+    builderReducer, createInitialState, migrateState, type BuilderAction,
     buildTree, flattenTree,
 } from "./_builder-state"
 import { PageConfigSidebar } from "./_page-config-sidebar"
@@ -59,7 +59,7 @@ const BUILDER_STORAGE_KEY = "builder_project"
 interface PersistedState {
     builder: import("./_builder-state").BuilderState
     ui: {
-        activeTheme: string; globalVariantLabel: string
+        activeTheme: string
         showNavbar: boolean; showSidebar: boolean; mockSidebarOpen: boolean; mockSidebarWidth: number
         gridCols: number; gridGap: number; gridOpacity: number; padV: number; padH: number
         deviceId: DeviceId
@@ -71,7 +71,10 @@ function loadPersisted(): PersistedState | null {
     try {
         const raw = localStorage.getItem(BUILDER_STORAGE_KEY)
         if (!raw) return null
-        return JSON.parse(raw) as PersistedState
+        const parsed = JSON.parse(raw) as PersistedState
+        // Migrate legacy navLinks → navbarItems/sidebarItems
+        parsed.builder = migrateState(parsed.builder as unknown as Record<string, unknown>)
+        return parsed
     } catch { return null }
 }
 
@@ -114,16 +117,6 @@ function historyReducer(history: HistoryState, action: HistoryAction): HistorySt
     }
 }
 
-// ─── Variants (component references stay here — can't be in pure module) ─────
-
-type VariantEntry = { label: string; component: React.ComponentType; importStatement?: string }
-const CHART_VARIANTS_LOCAL: Record<string, VariantEntry[]> = {
-    "column-chart": [
-        { label: "Default",       component: ColumnChart },
-        { label: "Typography v2", component: ColumnChartV2, importStatement: 'import { ColumnChartV2 } from "@/componentsSugest/charts/ColumnChart"' },
-    ],
-}
-const ALL_VARIANT_LABELS: string[] = Array.from(new Set(Object.values(CHART_VARIANTS_LOCAL).flatMap(vs => vs.map(v => v.label))))
 // ─── Component map (React refs stay in client module) ──────────────────────
 const CHART_COMPONENTS: Record<string, React.ComponentType> = {
     "column-chart": ColumnChart, "bar-chart": HorizontalBarChart, "area-chart": AreaChart,
@@ -140,11 +133,20 @@ const CHART_COMPONENTS: Record<string, React.ComponentType> = {
 
 // ─── Theme helper ──────────────────────────────────────────────────────────────
 
-function applyTheme(name: string) {
-    const vars = name !== "Custom" && (ALL_THEMES as string[]).includes(name)
-        ? themes[name as Exclude<ThemeName, "Custom">] : null
-    if (!vars) return
-    Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v))
+/** All CSS variable keys that themes define — used to clear stale inline styles */
+const THEME_VAR_KEYS = Object.keys(themes["Dark"])
+
+/** Force builder chrome to always be dark mode and clear any leftover inline theme vars on root */
+function forceBuilderDark() {
+    const el = document.documentElement
+    el.classList.add("dark")
+    THEME_VAR_KEYS.forEach(k => el.style.removeProperty(k))
+}
+
+/** Get CSS variables for a theme (to apply as inline styles on the device frame) */
+function getThemeVars(name: string): Record<string, string> {
+    if (name === "Custom" || !(ALL_THEMES as string[]).includes(name)) return {}
+    return themes[name as Exclude<ThemeName, "Custom">]
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -289,14 +291,15 @@ function ComponentIcon({ id }: { id: string }) {
 // ─── Nav link popover ─────────────────────────────────────────────────────────
 
 function NavLinkPopover({
-    anchorRef, pages, currentPageId, onLink, onUnlink, onClose,
+    anchorRef, pages, currentPageId, onLink, onRemove, onClose, mode = "edit",
 }: {
     anchorRef: React.RefObject<HTMLElement | null>
     pages: Page[]
     currentPageId: PageId | null
     onLink: (pageId: PageId) => void
-    onUnlink: () => void
+    onRemove?: () => void
     onClose: () => void
+    mode?: "add" | "edit"
 }) {
     const popoverRef = React.useRef<HTMLDivElement>(null)
     const tree = React.useMemo(() => buildTree(pages), [pages])
@@ -340,18 +343,20 @@ function NavLinkPopover({
             ref={popoverRef}
             className="absolute z-50 mt-1 w-52 rounded-lg border border-border bg-card shadow-xl py-2"
         >
-            <p className="px-3 pb-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Vincular a</p>
+            <p className="px-3 pb-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+                {mode === "add" ? "Selecionar página" : "Vincular a"}
+            </p>
             <div className="max-h-48 overflow-y-auto">
                 {renderNodes(tree)}
             </div>
-            {currentPageId && (
+            {mode === "edit" && onRemove && (
                 <>
                     <div className="my-1.5 border-t border-border" />
                     <button
-                        onClick={() => { onUnlink(); onClose() }}
+                        onClick={() => { onRemove(); onClose() }}
                         className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10 rounded transition-colors"
                     >
-                        <XIcon /> Remover vínculo
+                        <XIcon /> Remover link
                     </button>
                 </>
             )}
@@ -362,18 +367,28 @@ function NavLinkPopover({
 // ─── Mock navbar ───────────────────────────────────────────────────────────────
 
 function MockNavbar({
-    pages, navLinks, onNavigate, onLinkItem,
+    pages, items, onNavigate, onAddItem, onUpdateItem, onRemoveItem,
 }: {
     pages: Page[]
-    navLinks: NavLink[]
+    items: NavItem[]
     onNavigate: (pageId: PageId) => void
-    onLinkItem: (label: string, pageId: PageId | null) => void
+    onAddItem: (item: NavItem) => void
+    onUpdateItem: (itemId: string, label?: string, targetPageId?: PageId | null) => void
+    onRemoveItem: (itemId: string) => void
 }) {
-    const [popoverLabel, setPopoverLabel] = React.useState<string | null>(null)
+    const [popoverId, setPopoverId] = React.useState<string | null>(null)
+    const [addPopover, setAddPopover] = React.useState(false)
+    const [editingId, setEditingId] = React.useState<string | null>(null)
+    const [editValue, setEditValue] = React.useState("")
     const itemRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
+    const addRef = React.useRef<HTMLButtonElement | null>(null)
 
-    function getLinkedPageId(label: string): PageId | null {
-        return navLinks.find(l => l.sourceType === "mock-navbar" && l.sourceItemLabel === label)?.targetPageId ?? null
+    function commitEdit(id: string) {
+        const trimmed = editValue.trim()
+        if (trimmed && trimmed !== items.find(i => i.id === id)?.label) {
+            onUpdateItem(id, trimmed)
+        }
+        setEditingId(null)
     }
 
     return (
@@ -383,42 +398,72 @@ function MockNavbar({
                 <div className="w-20 h-2 rounded-full bg-muted-foreground/15" />
             </div>
             <div className="flex items-center gap-1">
-                {MOCK_NAVBAR_ITEMS.map(label => {
-                    const linked = getLinkedPageId(label)
-                    return (
-                        <div key={label} className="relative" ref={el => { itemRefs.current[label] = el }}>
+                {items.map(item => (
+                    <div key={item.id} className="relative" ref={el => { itemRefs.current[item.id] = el }}>
+                        {editingId === item.id ? (
+                            <input
+                                autoFocus
+                                value={editValue}
+                                onChange={e => setEditValue(e.target.value)}
+                                onBlur={() => commitEdit(item.id)}
+                                onKeyDown={e => { if (e.key === "Enter") commitEdit(item.id); if (e.key === "Escape") setEditingId(null) }}
+                                className="px-3 py-1 rounded text-sm bg-muted border border-border text-foreground outline-none w-24"
+                            />
+                        ) : (
                             <button
                                 onClick={() => {
-                                    if (pages.length <= 1 && !linked) return
-                                    if (linked && popoverLabel !== label) { onNavigate(linked); return }
-                                    setPopoverLabel(prev => prev === label ? null : label)
+                                    if (item.targetPageId && popoverId !== item.id) { onNavigate(item.targetPageId); return }
+                                    setPopoverId(prev => prev === item.id ? null : item.id)
                                 }}
+                                onDoubleClick={() => { setEditingId(item.id); setEditValue(item.label) }}
                                 className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1 rounded text-[10px] transition-colors select-none",
-                                    linked
+                                    "flex items-center gap-1.5 px-3 py-1 rounded text-sm transition-colors select-none",
+                                    item.targetPageId
                                         ? "text-muted-foreground hover:text-foreground cursor-pointer"
-                                        : pages.length > 1
-                                            ? "text-muted-foreground/40 hover:text-muted-foreground/70 cursor-pointer"
-                                            : "text-muted-foreground/40 cursor-default",
+                                        : "text-muted-foreground/40 hover:text-muted-foreground/70 cursor-pointer",
                                 )}
-                                title={linked ? `Navega para: ${pages.find(p => p.id === linked)?.label}` : pages.length > 1 ? "Clique para vincular" : undefined}
+                                title={item.targetPageId ? `Navega para: ${pages.find(p => p.id === item.targetPageId)?.label}` : "Clique para vincular"}
                             >
-                                {linked && <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
-                                {label}
+                                {item.targetPageId && <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
+                                {item.label}
                             </button>
-                            {popoverLabel === label && pages.length > 1 && (
-                                <NavLinkPopover
-                                    anchorRef={{ current: itemRefs.current[label] ?? null }}
-                                    pages={pages}
-                                    currentPageId={linked}
-                                    onLink={(pageId) => onLinkItem(label, pageId)}
-                                    onUnlink={() => onLinkItem(label, null)}
-                                    onClose={() => setPopoverLabel(null)}
-                                />
-                            )}
-                        </div>
-                    )
-                })}
+                        )}
+                        {popoverId === item.id && (
+                            <NavLinkPopover
+                                anchorRef={{ current: itemRefs.current[item.id] ?? null }}
+                                pages={pages}
+                                currentPageId={item.targetPageId}
+                                onLink={(pageId) => onUpdateItem(item.id, undefined, pageId)}
+                                onRemove={() => onRemoveItem(item.id)}
+                                onClose={() => setPopoverId(null)}
+                                mode="edit"
+                            />
+                        )}
+                    </div>
+                ))}
+                {/* Add link button */}
+                <div className="relative">
+                    <button
+                        ref={addRef}
+                        onClick={() => setAddPopover(v => !v)}
+                        className="flex items-center gap-1 px-3 py-1 rounded text-sm text-muted-foreground/50 hover:text-primary border border-dashed border-muted-foreground/20 hover:border-primary/40 transition-colors"
+                    >
+                        <PlusIcon /> link
+                    </button>
+                    {addPopover && (
+                        <NavLinkPopover
+                            anchorRef={addRef}
+                            pages={pages}
+                            currentPageId={null}
+                            onLink={(pageId) => {
+                                const page = pages.find(p => p.id === pageId)
+                                onAddItem({ id: newId(), label: page?.label ?? "link", targetPageId: pageId })
+                            }}
+                            onClose={() => setAddPopover(false)}
+                            mode="add"
+                        />
+                    )}
+                </div>
             </div>
             <div className="ml-auto flex items-center gap-2">
                 <div className="w-20 h-5 rounded bg-muted" />
@@ -431,18 +476,28 @@ function MockNavbar({
 // ─── Mock sidebar (collapsible + variable width) ───────────────────────────────
 
 function MockSidebar({
-    isOpen, onToggle, width, pages, navLinks, onNavigate, onLinkItem,
+    isOpen, onToggle, width, pages, items, onNavigate, onAddItem, onUpdateItem, onRemoveItem,
 }: {
     isOpen: boolean; onToggle: () => void; width: number
-    pages: Page[]; navLinks: NavLink[]
+    pages: Page[]; items: NavItem[]
     onNavigate: (pageId: PageId) => void
-    onLinkItem: (label: string, pageId: PageId | null) => void
+    onAddItem: (item: NavItem) => void
+    onUpdateItem: (itemId: string, label?: string, targetPageId?: PageId | null) => void
+    onRemoveItem: (itemId: string) => void
 }) {
-    const [popoverLabel, setPopoverLabel] = React.useState<string | null>(null)
+    const [popoverId, setPopoverId] = React.useState<string | null>(null)
+    const [addPopover, setAddPopover] = React.useState(false)
+    const [editingId, setEditingId] = React.useState<string | null>(null)
+    const [editValue, setEditValue] = React.useState("")
     const itemRefs = React.useRef<Record<string, HTMLDivElement | null>>({})
+    const addRef = React.useRef<HTMLButtonElement | null>(null)
 
-    function getLinkedPageId(label: string): PageId | null {
-        return navLinks.find(l => l.sourceType === "mock-sidebar" && l.sourceItemLabel === label)?.targetPageId ?? null
+    function commitEdit(id: string) {
+        const trimmed = editValue.trim()
+        if (trimmed && trimmed !== items.find(i => i.id === id)?.label) {
+            onUpdateItem(id, trimmed)
+        }
+        setEditingId(null)
     }
 
     if (!isOpen) {
@@ -451,62 +506,98 @@ function MockSidebar({
                 <button onClick={onToggle} className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted transition-colors" title="Expandir">
                     <ChevronRightIcon />
                 </button>
-                {MOCK_SIDEBAR_ITEMS.map((label, i) => {
-                    const linked = getLinkedPageId(label)
-                    return (
-                        <div key={i} className={cn("w-5 h-5 rounded-sm relative", linked ? "bg-primary/40" : "bg-muted-foreground/10")}>
-                            {linked && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-primary" />}
-                        </div>
-                    )
-                })}
+                {items.map(item => (
+                    <div key={item.id} className={cn("w-5 h-5 rounded-sm relative", item.targetPageId ? "bg-primary/40" : "bg-muted-foreground/10")}>
+                        {item.targetPageId && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-primary" />}
+                    </div>
+                ))}
+                <button
+                    onClick={() => setAddPopover(v => !v)}
+                    className="w-5 h-5 rounded-sm flex items-center justify-center text-muted-foreground/30 hover:text-primary hover:bg-muted transition-colors"
+                    title="Adicionar link"
+                >
+                    <PlusIcon />
+                </button>
             </div>
         )
     }
     return (
-        <div className="shrink-0 bg-card border-r border-border flex flex-col py-2 gap-0.5 overflow-hidden" style={{ width }}>
+        <div className={cn("shrink-0 bg-card border-r border-border flex flex-col py-2 gap-0.5 overflow-y-auto", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")} style={{ width }}>
             <div className="flex items-center justify-end px-2 mb-1">
                 <button onClick={onToggle} className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted transition-colors" title="Recolher">
                     <ChevronLeftIcon />
                 </button>
             </div>
-            {MOCK_SIDEBAR_ITEMS.map((label) => {
-                const linked = getLinkedPageId(label)
-                return (
-                    <div key={label} className="relative" ref={el => { itemRefs.current[label] = el }}>
+            {items.map(item => (
+                <div key={item.id} className="relative" ref={el => { itemRefs.current[item.id] = el }}>
+                    {editingId === item.id ? (
+                        <div className="mx-2 px-3 py-1.5" style={{ width: `calc(100% - 16px)` }}>
+                            <input
+                                autoFocus
+                                value={editValue}
+                                onChange={e => setEditValue(e.target.value)}
+                                onBlur={() => commitEdit(item.id)}
+                                onKeyDown={e => { if (e.key === "Enter") commitEdit(item.id); if (e.key === "Escape") setEditingId(null) }}
+                                className="w-full px-2 py-0.5 rounded text-sm bg-muted border border-border text-foreground outline-none"
+                            />
+                        </div>
+                    ) : (
                         <button
                             onClick={() => {
-                                if (pages.length <= 1 && !linked) return
-                                if (linked && popoverLabel !== label) { onNavigate(linked); return }
-                                setPopoverLabel(prev => prev === label ? null : label)
+                                if (item.targetPageId && popoverId !== item.id) { onNavigate(item.targetPageId); return }
+                                setPopoverId(prev => prev === item.id ? null : item.id)
                             }}
+                            onDoubleClick={() => { setEditingId(item.id); setEditValue(item.label) }}
                             className={cn(
                                 "flex items-center gap-2.5 w-full mx-2 px-3 py-1.5 rounded-md select-none transition-colors text-left",
-                                linked
+                                item.targetPageId
                                     ? "bg-primary/10 cursor-pointer"
-                                    : pages.length > 1
-                                        ? "hover:bg-muted/50 cursor-pointer"
-                                        : "cursor-default",
+                                    : "hover:bg-muted/50 cursor-pointer",
                             )}
                             style={{ width: `calc(100% - 16px)` }}
-                            title={linked ? `Navega para: ${pages.find(p => p.id === linked)?.label}` : pages.length > 1 ? "Clique para vincular" : undefined}
+                            title={item.targetPageId ? `Navega para: ${pages.find(p => p.id === item.targetPageId)?.label}` : "Clique para vincular"}
                         >
-                            <div className={cn("w-3 h-3 rounded-sm shrink-0", linked ? "bg-primary/60" : "bg-muted-foreground/15")} />
-                            <span className={cn("text-xs truncate", linked ? "text-primary font-medium" : "text-muted-foreground/40")}>{label}</span>
-                            {linked && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
+                            <div className={cn("w-3 h-3 rounded-sm shrink-0", item.targetPageId ? "bg-primary/60" : "bg-muted-foreground/15")} />
+                            <span className={cn("text-sm truncate", item.targetPageId ? "text-primary font-medium" : "text-muted-foreground/40")}>{item.label}</span>
+                            {item.targetPageId && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
                         </button>
-                        {popoverLabel === label && pages.length > 1 && (
-                            <NavLinkPopover
-                                anchorRef={{ current: itemRefs.current[label] ?? null }}
-                                pages={pages}
-                                currentPageId={linked}
-                                onLink={(pageId) => onLinkItem(label, pageId)}
-                                onUnlink={() => onLinkItem(label, null)}
-                                onClose={() => setPopoverLabel(null)}
-                            />
-                        )}
-                    </div>
-                )
-            })}
+                    )}
+                    {popoverId === item.id && (
+                        <NavLinkPopover
+                            anchorRef={{ current: itemRefs.current[item.id] ?? null }}
+                            pages={pages}
+                            currentPageId={item.targetPageId}
+                            onLink={(pageId) => onUpdateItem(item.id, undefined, pageId)}
+                            onRemove={() => onRemoveItem(item.id)}
+                            onClose={() => setPopoverId(null)}
+                            mode="edit"
+                        />
+                    )}
+                </div>
+            ))}
+            {/* Add link button */}
+            <div className="relative mx-2 mt-1">
+                <button
+                    ref={addRef}
+                    onClick={() => setAddPopover(v => !v)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-muted-foreground/40 hover:text-primary transition-colors"
+                >
+                    <PlusIcon /> adicionar link
+                </button>
+                {addPopover && (
+                    <NavLinkPopover
+                        anchorRef={addRef}
+                        pages={pages}
+                        currentPageId={null}
+                        onLink={(pageId) => {
+                            const page = pages.find(p => p.id === pageId)
+                            onAddItem({ id: newId(), label: page?.label ?? "link", targetPageId: pageId })
+                        }}
+                        onClose={() => setAddPopover(false)}
+                        mode="add"
+                    />
+                )}
+            </div>
         </div>
     )
 }
@@ -593,10 +684,9 @@ function PaletteSidebar({ onAdd }: { onAdd: (chartId: string) => void }) {
 // ─── Canvas card ───────────────────────────────────────────────────────────────
 
 function CanvasCard({
-    item, index, onRemove, globalVariantLabel, onResize, blockSize, gridCols, gap, suppressTransform,
+    item, index, onRemove, onResize, blockSize, gridCols, gap, suppressTransform,
 }: {
     item: CanvasItem; index: number; onRemove: () => void
-    globalVariantLabel: string
     onResize: (id: string, patch: Partial<Pick<CanvasItem, "colSpan" | "heightPx">>) => void
     blockSize: number; gridCols: number; gap: number; suppressTransform?: boolean
 }) {
@@ -604,8 +694,7 @@ function CanvasCard({
     const cardRef = React.useRef<HTMLDivElement | null>(null)
 
     const layout = isLayoutComponent(item.chartId)
-    const variants = CHART_VARIANTS_LOCAL[item.chartId] ?? []
-    const Component = variants.find(v => v.label === globalVariantLabel)?.component ?? CHART_COMPONENTS[item.chartId]
+    const Component = CHART_COMPONENTS[item.chartId]
     // When a fixed height is set, calculate the inner chart area height so recharts can resize
     const chartHeight = item.heightPx > 0 ? Math.max(80, item.heightPx - CARD_OVERHEAD) : undefined
 
@@ -665,7 +754,7 @@ function CanvasCard({
         <div
             ref={node => { setNodeRef(node); cardRef.current = node }}
             style={dndStyle}
-            className={cn("relative group [&>*:first-child]:!p-0", isDragging && "opacity-40")}
+            className={cn("relative group [&>*:first-child]:!p-0", isDragging && "opacity-0")}
         >
             {Component && React.createElement(
                 Component as React.ComponentType<{ chartHeight?: number }>,
@@ -709,12 +798,11 @@ function CanvasCard({
 
 // ─── Preview card (no DnD, no resize, no controls) ──────────────────────────
 
-function PreviewCard({ item, globalVariantLabel, gridCols }: {
-    item: CanvasItem; globalVariantLabel: string; gridCols: number
+function PreviewCard({ item, gridCols }: {
+    item: CanvasItem; gridCols: number
 }) {
     const layout = isLayoutComponent(item.chartId)
-    const variants = CHART_VARIANTS_LOCAL[item.chartId] ?? []
-    const Component = variants.find(v => v.label === globalVariantLabel)?.component ?? CHART_COMPONENTS[item.chartId]
+    const Component = CHART_COMPONENTS[item.chartId]
     const chartHeight = item.heightPx > 0 ? Math.max(80, item.heightPx - CARD_OVERHEAD) : undefined
 
     return (
@@ -747,7 +835,7 @@ function PlaceholderCard({ colSpan, heightPx, gridCols }: { colSpan: number; hei
                 alignSelf: "start",
                 minWidth: 0,
             }}
-            className="rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 flex items-center justify-center transition-all duration-200"
+            className="rounded-lg border-[3px] border-dashed border-primary/60 bg-primary/5 flex items-center justify-center transition-all duration-200"
         >
             <span className="text-xs text-primary/50 font-medium select-none">
                 {colSpan}/{gridCols}
@@ -771,8 +859,8 @@ function ContentDropZone({
         <div ref={setNodeRef} className="flex-1 relative">
             {showGrid && <ReferenceBlocks cols={gridCols} opacity={gridOpacity} blockSize={blockSize} padV={padV} padH={padH} gap={gap} />}
             {showEmptyState ? (
-                <div className="flex items-center justify-center min-h-96" style={{ paddingTop: padV, paddingBottom: padV, paddingLeft: padH, paddingRight: padH }}>
-                    <div className={cn("text-center px-12 py-16 rounded-xl border-2 border-dashed transition-colors w-full", isOver ? "border-primary/60 bg-primary/5" : "border-border/40")}>
+                <div className="flex flex-col flex-1 min-h-96" style={{ paddingTop: padV, paddingBottom: padV, paddingLeft: padH, paddingRight: padH }}>
+                    <div className={cn("flex flex-col items-center justify-center flex-1 w-full rounded-lg border-[3px] border-dashed transition-colors", isOver ? "border-primary/70 bg-primary/5" : "border-border/50")}>
                         <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground"><GridIcon /></div>
                         <p className="text-sm font-medium text-muted-foreground">Comece o layout</p>
                         <p className="mt-1 text-xs text-muted-foreground/50">Arraste gráficos da sidebar ou clique em <span className="inline-flex items-center"><PlusIcon /></span></p>
@@ -793,6 +881,13 @@ function ContentDropZone({
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function DashboardBuilderPage() {
+    const [isClient, setIsClient] = React.useState(false)
+    React.useEffect(() => setIsClient(true), [])
+    if (!isClient) return null
+    return <DashboardBuilderInner />
+}
+
+function DashboardBuilderInner() {
     // ── Load persisted data once ─────────────────────────────────────────────
     const persistedRef = React.useRef(loadPersisted())
     const saved = persistedRef.current
@@ -816,14 +911,13 @@ export default function DashboardBuilderPage() {
     const [dropIndicator,      setDropIndicator]      = React.useState<{ insertIdx: number; colSpan: number; heightPx: number } | null>(null)
     const [copied,             setCopied]             = React.useState(false)
     const [activeTheme,        setActiveTheme]        = React.useState(saved?.ui.activeTheme ?? "Light")
-    const [globalVariantLabel, setGlobalVariantLabel] = React.useState(saved?.ui.globalVariantLabel ?? "Default")
     const [showPageConfig,     setShowPageConfig]     = React.useState(false)
     const [previewMode,        setPreviewMode]        = React.useState(false)
 
     const totalComponents = state.pages.reduce((sum, p) => sum + p.canvasItems.length, 0)
 
-    // Apply persisted theme on mount
-    React.useEffect(() => { if (saved?.ui.activeTheme) applyTheme(saved.ui.activeTheme) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    // Force builder chrome to always be dark mode
+    React.useEffect(() => { forceBuilderDark() }, [])
 
     // Undo/Redo keyboard shortcuts (Ctrl+Z / Ctrl+Shift+Z)
     React.useEffect(() => {
@@ -871,14 +965,14 @@ export default function DashboardBuilderPage() {
             savePersisted({
                 builder: state,
                 ui: {
-                    activeTheme, globalVariantLabel,
+                    activeTheme,
                     showNavbar, showSidebar, mockSidebarOpen, mockSidebarWidth,
                     gridCols, gridGap, gridOpacity, padV, padH, deviceId,
                 },
             })
         }, 500)
         return () => clearTimeout(timer)
-    }, [state, activeTheme, globalVariantLabel, showNavbar, showSidebar, mockSidebarOpen, mockSidebarWidth, gridCols, gridGap, gridOpacity, padV, padH, deviceId])
+    }, [state, activeTheme, showNavbar, showSidebar, mockSidebarOpen, mockSidebarWidth, gridCols, gridGap, gridOpacity, padV, padH, deviceId])
 
     // Container width for snap calculations
     const contentRef = React.useRef<HTMLDivElement>(null)
@@ -894,9 +988,8 @@ export default function DashboardBuilderPage() {
     const displayItems = React.useMemo(() => {
         if (!dragActiveId) return canvasItems
 
-        const id = dragActiveId
         // Sidebar drag → inject placeholder at insertIdx
-        if (id.startsWith("sidebar-") && dropIndicator) {
+        if (dragActiveId.startsWith("sidebar-") && dropIndicator) {
             const placeholder: CanvasItem = {
                 instanceId: "__drop_placeholder__",
                 chartId: "", name: "", description: "",
@@ -909,19 +1002,9 @@ export default function DashboardBuilderPage() {
             return result
         }
 
-        // Canvas reorder → arrayMove to show predicted order
-        if (!id.startsWith("sidebar-") && dropIndicator) {
-            const activeIdx = canvasItems.findIndex(i => i.instanceId === id)
-            if (activeIdx === -1) return canvasItems
-            return arrayMove(canvasItems, activeIdx, dropIndicator.insertIdx)
-        }
-
+        // Canvas reorder → useSortable handles visual feedback via CSS transforms
         return canvasItems
     }, [canvasItems, dragActiveId, dropIndicator])
-
-    React.useEffect(() => {
-        try { const s = localStorage.getItem("styleguide_theme") ?? "Light"; setActiveTheme(s); applyTheme(s) } catch {}
-    }, [])
 
     // Keep layout components at full width when grid columns change
     React.useEffect(() => {
@@ -930,9 +1013,14 @@ export default function DashboardBuilderPage() {
 
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
+    // Theme vars applied as inline styles on the device frame (not on root)
+    const themeStyle = React.useMemo(
+        () => getThemeVars(activeTheme) as React.CSSProperties,
+        [activeTheme],
+    )
+
     function handleThemeChange(name: string) {
-        setActiveTheme(name); applyTheme(name)
-        try { localStorage.setItem("styleguide_theme", name) } catch {}
+        setActiveTheme(name)
     }
 
     function addChart(chartId: string, insertBeforeId?: string | null, colSpan?: number) {
@@ -996,29 +1084,9 @@ export default function DashboardBuilderPage() {
             return
         }
 
-        // ── Canvas reorder ────────────────────────────────────────────────────
-        const activeItem = canvasItems.find(i => i.instanceId === id)
-        if (!activeItem) return
-        if (!over || String(over.id) === "canvas") {
-            setGhostColSpan(activeItem.colSpan)
-            setDropIndicator(null)
-            return
-        }
-        const activeIdx = canvasItems.findIndex(i => i.instanceId === id)
-        const overIdx = canvasItems.findIndex(i => i.instanceId === String(over.id))
-        if (overIdx === -1) {
-            setGhostColSpan(activeItem.colSpan)
-            setDropIndicator(null)
-            return
-        }
-        const reordered = arrayMove(canvasItems, activeIdx, overIdx)
-        const rows = computeRows(reordered, gridCols)
-        const targetRow = rows[overIdx]
-        const usedInRow = reordered.reduce((sum, item, i) =>
-            (i !== overIdx && rows[i] === targetRow) ? sum + item.colSpan : sum, 0)
-        const colSpan = Math.max(1, Math.min(activeItem.colSpan, gridCols - usedInRow))
-        setGhostColSpan(colSpan)
-        setDropIndicator({ insertIdx: overIdx, colSpan, heightPx: activeItem.heightPx })
+        // ── Canvas reorder — let useSortable handle the visual animation ────
+        // No dropIndicator → suppressTransform stays false → smooth CSS transforms
+        setDropIndicator(null)
     }
 
     function handleDragEnd(e: DragEndEvent) {
@@ -1052,16 +1120,10 @@ export default function DashboardBuilderPage() {
     }
 
     function handleExport() {
-        // Build variant map (label + optional import override) for the export generator
-        const chartVariants: Record<string, { label: string; importStatement?: string }[]> = {}
-        for (const [id, vs] of Object.entries(CHART_VARIANTS_LOCAL)) {
-            chartVariants[id] = vs.map(v => ({ label: v.label, importStatement: v.importStatement }))
-        }
         const exportParams: ExportParams = {
-            pages: state.pages, navLinks: state.navLinks,
-            themeName: activeTheme, globalVariantLabel, gridCols, gridGap, padV, padH,
+            pages: state.pages, navbarItems: state.navbarItems, sidebarItems: state.sidebarItems,
+            themeName: activeTheme, gridCols, gridGap, padV, padH,
             showNavbar, showSidebar, mockSidebarWidth, mockSidebarOpen,
-            chartVariants,
         }
         const text = generateExportTextFull(exportParams)
         navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
@@ -1080,7 +1142,7 @@ export default function DashboardBuilderPage() {
     // ── Preview Mode ──────────────────────────────────────────────────────────
     if (previewMode) {
         return (
-            <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+            <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground" style={themeStyle as React.CSSProperties}>
                 {/* Navbar */}
                 {showNavbar && (
                     <div className="shrink-0 h-12 bg-card border-b border-border flex items-center gap-5 px-5">
@@ -1089,24 +1151,21 @@ export default function DashboardBuilderPage() {
                             <div className="w-20 h-2 rounded-full bg-muted-foreground/15" />
                         </div>
                         <div className="flex items-center gap-1">
-                            {MOCK_NAVBAR_ITEMS.map(label => {
-                                const linked = state.navLinks.find(l => l.sourceType === "mock-navbar" && l.sourceItemLabel === label)?.targetPageId ?? null
-                                return (
-                                    <button key={label}
-                                        onClick={() => linked && dispatch({ type: "SET_ACTIVE_PAGE", pageId: linked })}
-                                        className={cn(
-                                            "flex items-center gap-1.5 px-3 py-1 rounded text-[11px] transition-colors select-none",
-                                            linked
-                                                ? linked === state.activePageId
-                                                    ? "text-foreground font-medium bg-muted"
-                                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50 cursor-pointer"
-                                                : "text-muted-foreground/30 cursor-default",
-                                        )}
-                                    >
-                                        {label}
-                                    </button>
-                                )
-                            })}
+                            {state.navbarItems.map(item => (
+                                <button key={item.id}
+                                    onClick={() => item.targetPageId && dispatch({ type: "SET_ACTIVE_PAGE", pageId: item.targetPageId })}
+                                    className={cn(
+                                        "flex items-center gap-1.5 px-3 py-1 rounded text-sm transition-colors select-none",
+                                        item.targetPageId
+                                            ? item.targetPageId === state.activePageId
+                                                ? "text-foreground font-medium bg-muted"
+                                                : "text-muted-foreground hover:text-foreground hover:bg-muted/50 cursor-pointer"
+                                            : "text-muted-foreground/30 cursor-default",
+                                    )}
+                                >
+                                    {item.label}
+                                </button>
+                            ))}
                         </div>
                         <div className="ml-auto flex items-center gap-2">
                             <div className="w-20 h-5 rounded bg-muted" />
@@ -1118,30 +1177,29 @@ export default function DashboardBuilderPage() {
                 <div className="flex flex-1 overflow-hidden">
                     {/* Sidebar */}
                     {showSidebar && (
-                        <div className="shrink-0 bg-card border-r border-border flex flex-col py-2 gap-0.5 overflow-y-auto" style={{ width: mockSidebarWidth }}>
+                        <div className={cn("shrink-0 bg-card border-r border-border flex flex-col py-2 gap-0.5 overflow-y-auto", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")} style={{ width: mockSidebarWidth }}>
                             <div className="px-3 mb-2">
                                 <div className="flex items-center gap-2 px-2 py-1.5">
                                     <div className="w-4 h-4 rounded bg-primary/60 shrink-0" />
                                     <div className="w-16 h-2 rounded-full bg-muted-foreground/15" />
                                 </div>
                             </div>
-                            {MOCK_SIDEBAR_ITEMS.map(label => {
-                                const linked = state.navLinks.find(l => l.sourceType === "mock-sidebar" && l.sourceItemLabel === label)?.targetPageId ?? null
-                                const isActive = linked === state.activePageId
+                            {state.sidebarItems.map(item => {
+                                const isActive = item.targetPageId === state.activePageId
                                 return (
-                                    <button key={label}
-                                        onClick={() => linked && dispatch({ type: "SET_ACTIVE_PAGE", pageId: linked })}
+                                    <button key={item.id}
+                                        onClick={() => item.targetPageId && dispatch({ type: "SET_ACTIVE_PAGE", pageId: item.targetPageId })}
                                         className={cn(
-                                            "flex items-center gap-2.5 mx-2 px-3 py-1.5 rounded-md select-none transition-colors text-left text-xs",
-                                            linked
+                                            "flex items-center gap-2.5 mx-2 px-3 py-1.5 rounded-md select-none transition-colors text-left text-sm",
+                                            item.targetPageId
                                                 ? isActive
                                                     ? "bg-primary/10 text-foreground font-medium"
                                                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50 cursor-pointer"
                                                 : "text-muted-foreground/30 cursor-default",
                                         )}
                                     >
-                                        <div className={cn("w-3 h-3 rounded-sm shrink-0", linked ? isActive ? "bg-primary" : "bg-primary/40" : "bg-muted-foreground/10")} />
-                                        {label}
+                                        <div className={cn("w-3 h-3 rounded-sm shrink-0", item.targetPageId ? isActive ? "bg-primary" : "bg-primary/40" : "bg-muted-foreground/10")} />
+                                        {item.label}
                                     </button>
                                 )
                             })}
@@ -1149,12 +1207,12 @@ export default function DashboardBuilderPage() {
                     )}
 
                     {/* Content */}
-                    <div className="flex-1 overflow-auto bg-background">
+                    <div className={cn("flex-1 overflow-y-auto bg-background", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")}>
                         <div
                             style={{ display: "grid", gridTemplateColumns: `repeat(${gridCols}, 1fr)`, gap: gridGap, paddingTop: padV, paddingBottom: padV, paddingLeft: padH, paddingRight: padH }}
                         >
                             {canvasItems.map(item => (
-                                <PreviewCard key={item.instanceId} item={item} globalVariantLabel={globalVariantLabel} gridCols={gridCols} />
+                                <PreviewCard key={item.instanceId} item={item} gridCols={gridCols} />
                             ))}
                         </div>
                     </div>
@@ -1191,13 +1249,7 @@ export default function DashboardBuilderPage() {
                         <RedoIcon />
                     </button>
                 </div>
-                <div className="flex-1 flex items-center justify-center gap-1.5">
-                    {ALL_THEMES.map(name => (
-                        <button key={name} title={name} onClick={() => handleThemeChange(name)}
-                            className={cn("h-4 w-4 rounded-full border transition-all", activeTheme === name ? "scale-125 ring-2 ring-offset-1 ring-offset-background ring-primary border-transparent" : "border-border/50 opacity-70 hover:opacity-100 hover:scale-110")}
-                            style={{ background: THEME_SWATCHES[name] }} />
-                    ))}
-                </div>
+                <div className="flex-1" />
                 <div className="flex items-center gap-3 shrink-0">
                     <Link href="/styleguide"
                         className="flex items-center gap-1.5 rounded border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary">
@@ -1238,16 +1290,16 @@ export default function DashboardBuilderPage() {
                     <button onClick={() => setShowGrid(v => !v)} className={cn("flex items-center gap-1.5 transition-colors", showGrid ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
                         <GridIcon /> Grid
                     </button>
+                    <span className="text-muted-foreground/40">·</span>
+                    <span className="text-muted-foreground">Cols</span>
+                    <select value={gridCols} onChange={e => setGridCols(Number(e.target.value))} className="h-5 rounded border border-border bg-background px-1 text-[10px] text-foreground">
+                        {[4,6,8,10,12,16].map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                    <span className="text-muted-foreground/40">·</span>
+                    <span className="text-muted-foreground">Gap</span>
+                    <NumInput value={gridGap} onChange={setGridGap} min={0} max={80} step={4} w="w-12" />
+                    <span className="text-muted-foreground/60">px</span>
                     {showGrid && <>
-                        <span className="text-muted-foreground/40">·</span>
-                        <span className="text-muted-foreground">Cols</span>
-                        <select value={gridCols} onChange={e => setGridCols(Number(e.target.value))} className="h-5 rounded border border-border bg-background px-1 text-[10px] text-foreground">
-                            {[4,6,8,10,12,16].map(v => <option key={v} value={v}>{v}</option>)}
-                        </select>
-                        <span className="text-muted-foreground/40">·</span>
-                        <span className="text-muted-foreground">Gap</span>
-                        <NumInput value={gridGap} onChange={setGridGap} min={0} max={80} step={4} w="w-12" />
-                        <span className="text-muted-foreground/60">px</span>
                         <span className="text-muted-foreground/40">·</span>
                         <input type="range" min={5} max={60} value={gridOpacity} onChange={e => setGridOpacity(Number(e.target.value))} className="w-12 h-1 accent-primary" />
                         <span className="w-7 text-muted-foreground tabular-nums">{gridOpacity}%</span>
@@ -1274,20 +1326,6 @@ export default function DashboardBuilderPage() {
 
                 <div className="h-4 w-px bg-border mx-1 shrink-0" />
 
-                {/* Global variant */}
-                {ALL_VARIANT_LABELS.length > 1 && <>
-                    <div className="flex items-center gap-2 px-2 shrink-0">
-                        <span className="text-muted-foreground">Variação</span>
-                        {ALL_VARIANT_LABELS.map(label => (
-                            <button key={label} onClick={() => setGlobalVariantLabel(label)}
-                                className={cn("px-2 py-0.5 rounded transition-colors", globalVariantLabel === label ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground")}>
-                                {label}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="h-4 w-px bg-border mx-1 shrink-0" />
-                </>}
-
                 {/* Margins */}
                 <div className="flex items-center gap-2 px-2 shrink-0">
                     <span className="text-muted-foreground">Margem</span>
@@ -1296,6 +1334,17 @@ export default function DashboardBuilderPage() {
                     <span className="text-muted-foreground/60 text-[10px]">H</span>
                     <NumInput value={padH} onChange={setPadH} min={0} max={120} step={4} w="w-12" />
                     <span className="text-muted-foreground/60">px</span>
+                </div>
+
+                <div className="h-4 w-px bg-border mx-1 shrink-0" />
+
+                {/* Theme */}
+                <div className="flex items-center gap-1.5 px-2 shrink-0">
+                    {ALL_THEMES.map(name => (
+                        <button key={name} title={name} onClick={() => handleThemeChange(name)}
+                            className={cn("h-3.5 w-3.5 rounded-full border transition-all", activeTheme === name ? "scale-125 ring-2 ring-offset-1 ring-offset-card ring-primary border-transparent" : "border-border/50 opacity-70 hover:opacity-100 hover:scale-110")}
+                            style={{ background: THEME_SWATCHES[name] }} />
+                    ))}
                 </div>
 
                 <div className="h-4 w-px bg-border mx-1 shrink-0" />
@@ -1337,7 +1386,7 @@ export default function DashboardBuilderPage() {
                     <PaletteSidebar onAdd={addChart} />
 
                     {/* Stage */}
-                    <div className="flex-1 overflow-auto bg-muted/30 p-8">
+                    <div className="flex-1 overflow-hidden flex flex-col p-8 gap-4 bg-white/[.02] [background-image:radial-gradient(oklch(1_0_0/0.12)_0.75px,transparent_0.75px)] [background-size:16px_16px]">
                         {(() => {
                             // Shared screen content
                             const screenContent = (
@@ -1345,30 +1394,28 @@ export default function DashboardBuilderPage() {
                                     {showNavbar && (
                                         <MockNavbar
                                             pages={state.pages}
-                                            navLinks={state.navLinks}
+                                            items={state.navbarItems}
                                             onNavigate={(pageId) => dispatch({ type: "SET_ACTIVE_PAGE", pageId })}
-                                            onLinkItem={(label, pageId) => {
-                                                if (pageId) dispatch({ type: "SET_NAV_LINK", link: { sourceType: "mock-navbar", sourceItemLabel: label, targetPageId: pageId } })
-                                                else dispatch({ type: "REMOVE_NAV_LINK", sourceType: "mock-navbar", sourceItemLabel: label })
-                                            }}
+                                            onAddItem={(item) => dispatch({ type: "ADD_NAV_ITEM", target: "navbar", item })}
+                                            onUpdateItem={(itemId, label, targetPageId) => dispatch({ type: "UPDATE_NAV_ITEM", target: "navbar", itemId, label, targetPageId })}
+                                            onRemoveItem={(itemId) => dispatch({ type: "REMOVE_NAV_ITEM", target: "navbar", itemId })}
                                         />
                                     )}
-                                    <div className="flex flex-1">
+                                    <div className="flex flex-1 min-h-0 overflow-hidden">
                                         {showSidebar && (
                                             <MockSidebar
                                                 isOpen={mockSidebarOpen}
                                                 onToggle={() => setMockSidebarOpen(v => !v)}
                                                 width={mockSidebarWidth}
                                                 pages={state.pages}
-                                                navLinks={state.navLinks}
+                                                items={state.sidebarItems}
                                                 onNavigate={(pageId) => dispatch({ type: "SET_ACTIVE_PAGE", pageId })}
-                                                onLinkItem={(label, pageId) => {
-                                                    if (pageId) dispatch({ type: "SET_NAV_LINK", link: { sourceType: "mock-sidebar", sourceItemLabel: label, targetPageId: pageId } })
-                                                    else dispatch({ type: "REMOVE_NAV_LINK", sourceType: "mock-sidebar", sourceItemLabel: label })
-                                                }}
+                                                onAddItem={(item) => dispatch({ type: "ADD_NAV_ITEM", target: "sidebar", item })}
+                                                onUpdateItem={(itemId, label, targetPageId) => dispatch({ type: "UPDATE_NAV_ITEM", target: "sidebar", itemId, label, targetPageId })}
+                                                onRemoveItem={(itemId) => dispatch({ type: "REMOVE_NAV_ITEM", target: "sidebar", itemId })}
                                             />
                                         )}
-                                        <div ref={contentRef} className="flex-1 min-w-0">
+                                        <div ref={contentRef} className={cn("flex-1 min-w-0 overflow-y-auto", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")}>
                                             <SortableContext items={canvasItems.map(i => i.instanceId)} strategy={rectSortingStrategy}>
                                                 <ContentDropZone isEmpty={canvasItems.length === 0} hasDragPlaceholder={!!dropIndicator} showGrid={showGrid} gridCols={gridCols} gridOpacity={gridOpacity} blockSize={blockSize} padV={padV} padH={padH} gap={gridGap}>
                                                     {displayItems.map((item, idx) => {
@@ -1378,7 +1425,6 @@ export default function DashboardBuilderPage() {
                                                         return (
                                                             <CanvasCard key={item.instanceId} item={item} index={idx}
                                                                 onRemove={() => removeItem(item.instanceId)}
-                                                                globalVariantLabel={globalVariantLabel}
                                                                 onResize={resizeItem} blockSize={blockSize} gridCols={gridCols} gap={gridGap}
                                                                 suppressTransform={!!dropIndicator} />
                                                         )
@@ -1394,8 +1440,8 @@ export default function DashboardBuilderPage() {
                                 // ── Tablet / Mobile — bordered frame ──
                                 return (
                                     <div
-                                        className="mx-auto bg-background overflow-hidden flex flex-col rounded-xl border border-border"
-                                        style={{ width: frameWidth, minHeight: 480 }}
+                                        className="flex-1 min-h-0 mx-auto bg-background overflow-hidden flex flex-col rounded-xl border border-border shadow-lg"
+                                        style={{ ...themeStyle, width: frameWidth }}
                                     >
                                         {screenContent}
                                     </div>
@@ -1405,8 +1451,8 @@ export default function DashboardBuilderPage() {
                             // ── Desktop full-width — no frame ──
                             return (
                                 <div
-                                    className="mx-auto bg-background overflow-hidden flex flex-col border border-border"
-                                    style={{ width: "100%", minHeight: "100%" }}
+                                    className="flex-1 min-h-0 mx-auto bg-background overflow-hidden flex flex-col border border-border shadow-lg"
+                                    style={{ ...themeStyle, width: "100%" }}
                                 >
                                     {screenContent}
                                 </div>
@@ -1414,7 +1460,7 @@ export default function DashboardBuilderPage() {
                         })()}
 
                         {canvasItems.length > 0 && (
-                            <div className="mx-auto mt-4 rounded-lg border border-border bg-card px-4 py-3 text-xs" style={{ width: frameWidth > 0 ? frameWidth : "100%" }}>
+                            <div className="shrink-0 mx-auto rounded-lg border border-border bg-card px-4 py-3 text-xs" style={{ width: frameWidth > 0 ? frameWidth : "100%" }}>
                                 <p className="font-medium text-foreground mb-0.5">Como usar a referência exportada</p>
                                 <p className="text-muted-foreground leading-relaxed">Clique em <strong>Copiar referência</strong> e cole em uma conversa com IA. O documento inclui tema, componentes, colunas e formatos de dados.</p>
                             </div>
@@ -1422,16 +1468,33 @@ export default function DashboardBuilderPage() {
                     </div>
 
                     <DragOverlay dropAnimation={null}>
-                        {(activeSidebar || activeCanvas) && (() => {
-                            const chartId = activeSidebar ? activeSidebar.id : activeCanvas!.chartId
-                            const name = activeSidebar ? activeSidebar.name : activeCanvas!.name
+                        {activeSidebar && (
+                            <div
+                                style={{ width: 200, pointerEvents: "none" }}
+                                className="rounded-lg bg-card border border-border shadow-2xl ring-2 ring-primary/60 px-4 py-3 flex items-center gap-2"
+                            >
+                                <ComponentIcon id={activeSidebar.id} />
+                                <span className="text-xs font-medium text-foreground truncate">{activeSidebar.name}</span>
+                            </div>
+                        )}
+                        {activeCanvas && (() => {
+                            const Component = CHART_COMPONENTS[activeCanvas.chartId]
+                            const actualWidth = activeCanvas.colSpan * blockSize + (activeCanvas.colSpan - 1) * gridGap
+                            const chartHeight = activeCanvas.heightPx > 0 ? Math.max(80, activeCanvas.heightPx - CARD_OVERHEAD) : undefined
                             return (
                                 <div
-                                    style={{ width: 200, pointerEvents: "none" }}
-                                    className="rounded-lg bg-card border border-border shadow-2xl ring-2 ring-primary/60 px-4 py-3 flex items-center gap-2"
+                                    style={{
+                                        width: actualWidth,
+                                        height: activeCanvas.heightPx > 0 ? activeCanvas.heightPx : undefined,
+                                        pointerEvents: "none",
+                                        overflow: "hidden",
+                                    }}
+                                    className="rounded-lg bg-card border-2 border-primary/40 shadow-2xl opacity-70 [&>*:first-child]:!p-0"
                                 >
-                                    <ComponentIcon id={chartId} />
-                                    <span className="text-xs font-medium text-foreground truncate">{name}</span>
+                                    {Component && React.createElement(
+                                        Component as React.ComponentType<{ chartHeight?: number }>,
+                                        chartHeight !== undefined ? { chartHeight } : {}
+                                    )}
                                 </div>
                             )
                         })()}
@@ -1443,7 +1506,8 @@ export default function DashboardBuilderPage() {
                     <PageConfigSidebar
                         pages={state.pages}
                         activePageId={state.activePageId}
-                        navLinks={state.navLinks}
+                        navbarItems={state.navbarItems}
+                        sidebarItems={state.sidebarItems}
                         dispatch={dispatch}
                         onClose={() => setShowPageConfig(false)}
                     />

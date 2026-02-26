@@ -19,7 +19,7 @@ export function StatCard({ title, value, change, positive, description }: StatCa
                 <p className="text-sm/6 font-medium text-muted-foreground">{title}</p>
                 <span className={cn(
                     "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-                    positive ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
+                    positive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
                 )}>
                     {positive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                     {change}

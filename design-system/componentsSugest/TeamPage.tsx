@@ -46,8 +46,8 @@ export function TeamPage() {
                         <h2 className="text-lg/7 font-semibold text-foreground">Time</h2>
                         <div className="flex items-center gap-3 mt-0.5">
                             <span className="text-sm text-muted-foreground">{members.length} membros</span>
-                            <span className="flex items-center gap-1.5 text-sm text-emerald-400">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                            <span className="flex items-center gap-1.5 text-sm text-success">
+                                <span className="h-1.5 w-1.5 rounded-full bg-success" />
                                 {onlineCount} online
                             </span>
                         </div>
@@ -83,7 +83,7 @@ export function TeamPage() {
                             <Avatar size="lg">
                                 <AvatarFallback className="text-sm">{member.initials}</AvatarFallback>
                                 {member.online && (
-                                    <AvatarBadge className="bg-emerald-500 border-card" />
+                                    <AvatarBadge className="bg-success border-card" />
                                 )}
                             </Avatar>
 

@@ -10,35 +10,35 @@ import { Button } from "@/components/ui/button"
 const initialNotifications = [
     {
         id: 1, type: "success", read: false,
-        icon: CheckCircle2, color: "text-emerald-400",
+        icon: CheckCircle2, color: "text-success",
         title: "Deploy concluído com sucesso",
         description: "A versão 2.4.1 foi publicada em produção sem erros.",
         time: "5 min atrás",
     },
     {
         id: 2, type: "warning", read: false,
-        icon: AlertTriangle, color: "text-amber-400",
+        icon: AlertTriangle, color: "text-warning",
         title: "Uso próximo do limite",
         description: "Você atingiu 85% do limite de emails do plano Pro.",
         time: "2h atrás",
     },
     {
         id: 3, type: "info", read: false,
-        icon: Info, color: "text-blue-400",
+        icon: Info, color: "text-info",
         title: "Novo membro na equipe",
         description: "Alice Monteiro aceitou o convite e entrou no workspace.",
         time: "Ontem",
     },
     {
         id: 4, type: "error", read: true,
-        icon: AlertCircle, color: "text-rose-400",
+        icon: AlertCircle, color: "text-destructive",
         title: "Falha no webhook",
         description: "3 tentativas de entrega para o endpoint falharam.",
         time: "Ontem",
     },
     {
         id: 5, type: "success", read: true,
-        icon: CheckCircle2, color: "text-emerald-400",
+        icon: CheckCircle2, color: "text-success",
         title: "Pagamento processado",
         description: "Fatura de novembro no valor de R$ 89,00 paga.",
         time: "2 dias atrás",
@@ -91,7 +91,7 @@ export function NotificationsPage() {
                 </div>
             ) : (
                 <div className="overflow-hidden rounded-lg border border-border bg-card">
-                    <div className="divide-y divide-white/5">
+                    <div className="divide-y divide-border">
                         {items.map(item => {
                             const Icon = item.icon
                             return (

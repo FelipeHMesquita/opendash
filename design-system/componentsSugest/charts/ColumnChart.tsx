@@ -42,15 +42,15 @@ const DATA: DataPoint[] = [
 // ─── Axis style (stable reference — defined outside component) ─────────────────
 
 const axisStyle = {
-    tick: { fill: "var(--muted-foreground)", fontSize: 11 },
+    tick: { fill: "var(--muted-foreground)", fontSize: 12 },
     axisLine: { stroke: "var(--border)" },
     tickLine: false as const,
 }
 
-// v2: fontSize 12 = text-xs do sistema (caption — orientar, não competir)
+// v2: fontSize 10 — menor e mais discreto que o default, eixos orientam sem competir com os dados
 const axisStyleV2 = {
-    tick: { fill: "var(--muted-foreground)", fontSize: 12 },
-    axisLine: { stroke: "var(--border)" },
+    tick: { fill: "var(--muted-foreground)", fontSize: 10, fontWeight: 500 },
+    axisLine: { stroke: "var(--border)", strokeOpacity: 0.5 },
     tickLine: false as const,
 }
 
@@ -92,7 +92,7 @@ function ChartTooltip({
                             style={{ backgroundColor: entry.color }}
                         />
                         <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>{entry.name}</span>
-                        <span className="ml-auto pl-4 text-xs font-medium tabular-nums" style={{ color: "var(--foreground)" }}>
+                        <span className="ml-auto pl-4 text-sm font-semibold tabular-nums" style={{ color: "var(--foreground)" }}>
                             R${(entry.value / 1000).toFixed(0)}k
                         </span>
                     </div>

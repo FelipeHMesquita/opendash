@@ -1,7 +1,7 @@
 // ─── Comprehensive export generator ──────────────────────────────────────────
 // Generates a complete design specification in Markdown format (8 sections).
 
-import { type Page, type NavLink, buildTree, DEVICE_PRESETS, MOCK_NAVBAR_ITEMS, MOCK_SIDEBAR_ITEMS } from "./_builder-state"
+import { type Page, type NavItem, buildTree, DEVICE_PRESETS } from "./_builder-state"
 import { themes, type ThemeName, ALL_THEMES } from "./styleguide/_themes"
 import {
     TYPOGRAPHY_TOKENS, SPACING_SCALE, RADIUS_TOKENS, SHADOW_TOKENS,
@@ -15,9 +15,9 @@ import { COMPONENT_METADATA } from "./_component-metadata"
 
 export interface ExportParams {
     pages: Page[]
-    navLinks: NavLink[]
+    navbarItems: NavItem[]
+    sidebarItems: NavItem[]
     themeName: string
-    globalVariantLabel: string
     gridCols: number
     gridGap: number
     padV: number
@@ -26,7 +26,6 @@ export interface ExportParams {
     showSidebar: boolean
     mockSidebarWidth: number
     mockSidebarOpen: boolean
-    chartVariants: Record<string, { label: string; importStatement?: string }[]>
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -192,7 +191,7 @@ function generateSitemapSection(params: ExportParams): string {
 // ─── Section 4: Componentes por Página ───────────────────────────────────────
 
 function generateComponentsSection(params: ExportParams): string {
-    const { pages, gridCols, globalVariantLabel, chartVariants } = params
+    const { pages, gridCols } = params
     const lines: string[] = ["## 4. Componentes por Página"]
 
     pages.forEach(page => {
@@ -204,13 +203,8 @@ function generateComponentsSection(params: ExportParams): string {
         }
 
         page.canvasItems.forEach((item, i) => {
-            const variants = chartVariants[item.chartId] ?? []
-            const av = variants.find(v => v.label === globalVariantLabel)
-            const importStmt = av?.importStatement ?? item.importStatement
-            const vSuffix = av && globalVariantLabel !== "Default" ? ` (${av.label})` : ""
-
-            lines.push("", `#### ${i + 1}. ${item.name}${vSuffix}`)
-            lines.push(`- Import: \`${importStmt}\``)
+            lines.push("", `#### ${i + 1}. ${item.name}`)
+            lines.push(`- Import: \`${item.importStatement}\``)
             lines.push(`- Largura: ${item.colSpan}/${gridCols} colunas`)
             if (item.heightPx > 0) lines.push(`- Altura: ${item.heightPx}px`)
             lines.push(`- Schema: \`${item.dataType}\``)
@@ -294,7 +288,7 @@ function generateChartPaletteSection(params: ExportParams): string {
 // ─── Section 6: Navegação ────────────────────────────────────────────────────
 
 function generateNavigationSection(params: ExportParams): string {
-    const { navLinks, pages, showNavbar, showSidebar } = params
+    const { navbarItems, sidebarItems, pages, showNavbar, showSidebar } = params
     const lines: string[] = ["## 6. Navegação"]
 
     lines.push("", `- Biblioteca de ícones: **lucide-react**`)
@@ -302,24 +296,22 @@ function generateNavigationSection(params: ExportParams): string {
     // Navbar links
     if (showNavbar) {
         lines.push("", "### Navbar")
-        for (const label of MOCK_NAVBAR_ITEMS) {
-            const link = navLinks.find(l => l.sourceType === "mock-navbar" && l.sourceItemLabel === label)
-            const target = link ? pages.find(p => p.id === link.targetPageId) : null
+        for (const item of navbarItems) {
+            const target = item.targetPageId ? pages.find(p => p.id === item.targetPageId) : null
             const route = target ? fullPath(target, pages) : "(sem link)"
-            const icon = DEFAULT_NAVBAR_ICONS[label] ?? "—"
-            lines.push(`- "${label}" → ${route} | ícone: ${icon}`)
+            const icon = DEFAULT_NAVBAR_ICONS[item.label] ?? "—"
+            lines.push(`- "${item.label}" → ${route} | ícone: ${icon}`)
         }
     }
 
     // Sidebar links
     if (showSidebar) {
         lines.push("", "### Sidebar")
-        for (const label of MOCK_SIDEBAR_ITEMS) {
-            const link = navLinks.find(l => l.sourceType === "mock-sidebar" && l.sourceItemLabel === label)
-            const target = link ? pages.find(p => p.id === link.targetPageId) : null
+        for (const item of sidebarItems) {
+            const target = item.targetPageId ? pages.find(p => p.id === item.targetPageId) : null
             const route = target ? fullPath(target, pages) : "(sem link)"
-            const icon = DEFAULT_SIDEBAR_ICONS[label] ?? "—"
-            lines.push(`- "${label}" → ${route} | ícone: ${icon}`)
+            const icon = DEFAULT_SIDEBAR_ICONS[item.label] ?? "—"
+            lines.push(`- "${item.label}" → ${route} | ícone: ${icon}`)
         }
     }
 
@@ -399,14 +391,15 @@ function generateAssetsSection(params: ExportParams): string {
 // ─── Instructions ────────────────────────────────────────────────────────────
 
 function generateInstructions(params: ExportParams): string {
-    const { pages, navLinks } = params
+    const { pages, navbarItems, sidebarItems } = params
     const lines: string[] = ["## Instruções para Implementação"]
 
+    const hasLinks = navbarItems.some(i => i.targetPageId) || sidebarItems.some(i => i.targetPageId)
     lines.push("")
     lines.push("- Framework: **Next.js App Router** (TypeScript)")
     lines.push("- Cada página é uma route em `app/`")
     if (pages.length > 1) lines.push("- A hierarquia do sitemap define o nesting de routes")
-    if (navLinks.length > 0) lines.push("- Use o mapa de navegação (seção 6) para `<Link>` reais")
+    if (hasLinks) lines.push("- Use o mapa de navegação (seção 6) para `<Link>` reais")
     lines.push("- Substitua o mock data (seção 4) pelos dados reais da aplicação")
     lines.push("- Aplique as CSS variables do tema (seção 1) em `:root`")
     lines.push("- Use os tokens de espaçamento, tipografia e radius conforme documentado")

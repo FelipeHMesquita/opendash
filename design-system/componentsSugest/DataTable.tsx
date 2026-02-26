@@ -24,16 +24,16 @@ const projects = [
 
 // Uniform badge pattern for all categorical columns — design-rules §9
 const statusBadge: Record<string, string> = {
-    "Em progresso": "bg-blue-500/10 text-blue-400",
-    "Revisão":      "bg-amber-500/10 text-amber-400",
-    "Concluído":    "bg-emerald-500/10 text-emerald-400",
+    "Em progresso": "bg-info/10 text-info",
+    "Revisão":      "bg-warning/10 text-warning",
+    "Concluído":    "bg-success/10 text-success",
     "Backlog":      "bg-muted text-muted-foreground",
 }
 
 const priorityBadge: Record<string, string> = {
-    "Alta":  "bg-rose-500/10 text-rose-400",
-    "Média": "bg-amber-500/10 text-amber-400",
-    "Baixa": "bg-emerald-500/10 text-emerald-400",
+    "Alta":  "bg-destructive/10 text-destructive",
+    "Média": "bg-warning/10 text-warning",
+    "Baixa": "bg-success/10 text-success",
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -99,7 +99,7 @@ export function DataTable() {
                             <span className="text-xs/6 text-muted-foreground">{selected.length} selecionado(s)</span>
                             <Button
                                 size="sm"
-                                className="border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-400"
+                                className="border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
                                 variant="ghost"
                             >
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -124,11 +124,11 @@ export function DataTable() {
                                     className="rounded border-border accent-primary"
                                 />
                             </TableHead>
-                            <TableHead className="px-3 py-4 text-xs/6 font-semibold text-muted-foreground">Projeto</TableHead>
-                            <TableHead className="px-3 py-4 text-xs/6 font-semibold text-muted-foreground">Status</TableHead>
-                            <TableHead className="px-3 py-4 text-xs/6 font-semibold text-muted-foreground">Prioridade</TableHead>
-                            <TableHead className="px-3 py-4 text-xs/6 font-semibold text-muted-foreground">Responsável</TableHead>
-                            <TableHead className="px-3 py-4 text-xs/6 font-semibold text-muted-foreground">Atualizado</TableHead>
+                            <TableHead className="px-3 py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">Projeto</TableHead>
+                            <TableHead className="px-3 py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">Status</TableHead>
+                            <TableHead className="px-3 py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">Prioridade</TableHead>
+                            <TableHead className="px-3 py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">Responsável</TableHead>
+                            <TableHead className="px-3 py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">Atualizado</TableHead>
                             <TableHead className="w-10 px-3 py-4" />
                         </TableRow>
                     </TableHeader>

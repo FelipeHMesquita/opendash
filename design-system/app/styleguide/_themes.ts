@@ -1,16 +1,18 @@
 // ─── Theme types & data ───────────────────────────────────────────────────────
 // Shared between _theme-preview.tsx (UI) and export/page.tsx (code generation)
+//
+// Curadoria: cada tema deve ter --primary em hue distinto das cores semânticas
+// fixas (--success H142, --warning H71, --info H245, --destructive H25).
+// Temas com primary no mesmo range de hue quebram o significado semântico.
 
 export type ThemeName =
-    | "Light" | "Dark" | "Graphite" | "Midnight" | "Amethyst" | "Forest"
-    | "Linen" | "Terminal" | "Ember" | "Ocean" | "Rose"
-    | "Dash" | "VSCode"
+    | "Light" | "Dark" | "Graphite" | "Midnight" | "Amethyst"
+    | "Ocean" | "VSCode"
     | "Custom"
 
 export const ALL_THEMES: Exclude<ThemeName, "Custom">[] = [
-    "Light", "Dark", "Graphite", "Midnight", "Amethyst", "Forest",
-    "Linen", "Terminal", "Ember", "Ocean", "Rose",
-    "Dash", "VSCode",
+    "Light", "Dark", "Graphite", "Midnight", "Amethyst",
+    "Ocean", "VSCode",
 ]
 
 export const themes: Record<Exclude<ThemeName, "Custom">, Record<string, string>> = {
@@ -27,6 +29,11 @@ export const themes: Record<Exclude<ThemeName, "Custom">, Record<string, string>
         "--primary":            "oklch(0.30 0.18 250)",
         "--primary-foreground": "oklch(1 0 0)",
         "--ring":               "oklch(0.30 0.18 250)",
+        "--chart-1":            "oklch(0.55 0.20 250)",
+        "--chart-2":            "oklch(0.58 0.17 145)",
+        "--chart-3":            "oklch(0.75 0.16 90)",
+        "--chart-4":            "oklch(0.58 0.22 25)",
+        "--chart-5":            "oklch(0.55 0.16 200)",
     },
     "Dark": {
         "--background":         "oklch(0.08 0 0)",
@@ -41,6 +48,11 @@ export const themes: Record<Exclude<ThemeName, "Custom">, Record<string, string>
         "--primary":            "oklch(0.62 0.22 250)",
         "--primary-foreground": "oklch(1 0 0)",
         "--ring":               "oklch(0.62 0.22 250)",
+        "--chart-1":            "oklch(0.68 0.18 250)",
+        "--chart-2":            "oklch(0.70 0.17 145)",
+        "--chart-3":            "oklch(0.82 0.16 90)",
+        "--chart-4":            "oklch(0.68 0.20 25)",
+        "--chart-5":            "oklch(0.65 0.14 200)",
     },
     "Graphite": {
         "--background":         "oklch(0.13 0 0)",
@@ -55,6 +67,11 @@ export const themes: Record<Exclude<ThemeName, "Custom">, Record<string, string>
         "--primary":            "oklch(0.62 0.22 250)",
         "--primary-foreground": "oklch(1 0 0)",
         "--ring":               "oklch(0.62 0.22 250)",
+        "--chart-1":            "oklch(0.68 0.18 250)",
+        "--chart-2":            "oklch(0.70 0.17 145)",
+        "--chart-3":            "oklch(0.82 0.16 90)",
+        "--chart-4":            "oklch(0.68 0.20 25)",
+        "--chart-5":            "oklch(0.65 0.14 200)",
     },
     // Surfaces H 230 → primary H 230 (azul coerente)
     "Midnight": {
@@ -70,6 +87,11 @@ export const themes: Record<Exclude<ThemeName, "Custom">, Record<string, string>
         "--primary":            "oklch(0.62 0.22 230)",
         "--primary-foreground": "oklch(1 0 0)",
         "--ring":               "oklch(0.62 0.22 230)",
+        "--chart-1":            "oklch(0.68 0.18 250)",
+        "--chart-2":            "oklch(0.70 0.17 145)",
+        "--chart-3":            "oklch(0.82 0.16 90)",
+        "--chart-4":            "oklch(0.68 0.20 25)",
+        "--chart-5":            "oklch(0.65 0.14 200)",
     },
     // Surfaces H 284 → primary H 284 (roxo coerente)
     "Amethyst": {
@@ -85,68 +107,13 @@ export const themes: Record<Exclude<ThemeName, "Custom">, Record<string, string>
         "--primary":            "oklch(0.62 0.22 284)",
         "--primary-foreground": "oklch(1 0 0)",
         "--ring":               "oklch(0.62 0.22 284)",
+        "--chart-1":            "oklch(0.68 0.18 250)",
+        "--chart-2":            "oklch(0.70 0.17 145)",
+        "--chart-3":            "oklch(0.82 0.16 90)",
+        "--chart-4":            "oklch(0.68 0.20 25)",
+        "--chart-5":            "oklch(0.65 0.14 200)",
     },
-    // Surfaces H 160 → primary H 160 (verde coerente)
-    "Forest": {
-        "--background":         "oklch(0.08 0.015 160)",
-        "--foreground":         "oklch(0.97 0 0)",
-        "--card":               "oklch(0.12 0.012 160)",
-        "--card-foreground":    "oklch(0.97 0 0)",
-        "--muted":              "oklch(0.17 0.010 160)",
-        "--muted-foreground":   "oklch(0.60 0 0)",
-        "--border":             "oklch(1 0 0 / 10%)",
-        "--accent":             "oklch(0.21 0.010 160)",
-        "--accent-foreground":  "oklch(0.97 0 0)",
-        "--primary":            "oklch(0.65 0.20 160)",
-        "--primary-foreground": "oklch(1 0 0)",
-        "--ring":               "oklch(0.65 0.20 160)",
-    },
-    // ── Luz quente, fundo creme, primary âmbar dourado
-    "Linen": {
-        "--background":         "oklch(0.98 0.012 80)",
-        "--foreground":         "oklch(0.13 0.005 80)",
-        "--card":               "oklch(1.00 0.008 80)",
-        "--card-foreground":    "oklch(0.13 0.005 80)",
-        "--muted":              "oklch(0.95 0.010 80)",
-        "--muted-foreground":   "oklch(0.50 0.004 80)",
-        "--border":             "oklch(0 0 0 / 8%)",
-        "--accent":             "oklch(0.93 0.012 80)",
-        "--accent-foreground":  "oklch(0.13 0.005 80)",
-        "--primary":            "oklch(0.55 0.20 60)",
-        "--primary-foreground": "oklch(1 0 0)",
-        "--ring":               "oklch(0.55 0.20 60)",
-    },
-    // ── Ultra-dark, neon verde, foreground levemente tingido
-    "Terminal": {
-        "--background":         "oklch(0.05 0 0)",
-        "--foreground":         "oklch(0.88 0.04 142)",
-        "--card":               "oklch(0.08 0.008 142)",
-        "--card-foreground":    "oklch(0.88 0.04 142)",
-        "--muted":              "oklch(0.12 0.010 142)",
-        "--muted-foreground":   "oklch(0.55 0.04 142)",
-        "--border":             "oklch(1 0 0 / 8%)",
-        "--accent":             "oklch(0.14 0.015 142)",
-        "--accent-foreground":  "oklch(0.88 0.04 142)",
-        "--primary":            "oklch(0.70 0.28 142)",
-        "--primary-foreground": "oklch(0.05 0 0)",
-        "--ring":               "oklch(0.70 0.28 142)",
-    },
-    // ── Dark quente, superfícies tingidas de laranja, primary âmbar
-    "Ember": {
-        "--background":         "oklch(0.09 0.015 30)",
-        "--foreground":         "oklch(0.97 0 0)",
-        "--card":               "oklch(0.13 0.012 30)",
-        "--card-foreground":    "oklch(0.97 0 0)",
-        "--muted":              "oklch(0.18 0.010 30)",
-        "--muted-foreground":   "oklch(0.60 0 0)",
-        "--border":             "oklch(1 0 0 / 10%)",
-        "--accent":             "oklch(0.21 0.010 30)",
-        "--accent-foreground":  "oklch(0.97 0 0)",
-        "--primary":            "oklch(0.72 0.22 50)",
-        "--primary-foreground": "oklch(0.08 0 0)",
-        "--ring":               "oklch(0.72 0.22 50)",
-    },
-    // ── Dark teal, superfícies H 200, primary teal
+    // Dark teal, superfícies H 200, primary teal
     "Ocean": {
         "--background":         "oklch(0.08 0.018 200)",
         "--foreground":         "oklch(0.97 0 0)",
@@ -160,38 +127,13 @@ export const themes: Record<Exclude<ThemeName, "Custom">, Record<string, string>
         "--primary":            "oklch(0.68 0.20 185)",
         "--primary-foreground": "oklch(1 0 0)",
         "--ring":               "oklch(0.68 0.20 185)",
+        "--chart-1":            "oklch(0.68 0.18 250)",
+        "--chart-2":            "oklch(0.70 0.17 145)",
+        "--chart-3":            "oklch(0.82 0.16 90)",
+        "--chart-4":            "oklch(0.68 0.20 25)",
+        "--chart-5":            "oklch(0.65 0.14 200)",
     },
-    // ── Luz rosada, fundo sutilmente tingido H 340, primary rose
-    "Rose": {
-        "--background":         "oklch(0.99 0.005 340)",
-        "--foreground":         "oklch(0.13 0 0)",
-        "--card":               "oklch(1.00 0.003 340)",
-        "--card-foreground":    "oklch(0.13 0 0)",
-        "--muted":              "oklch(0.96 0.006 340)",
-        "--muted-foreground":   "oklch(0.52 0 0)",
-        "--border":             "oklch(0 0 0 / 8%)",
-        "--accent":             "oklch(0.95 0.007 340)",
-        "--accent-foreground":  "oklch(0.13 0 0)",
-        "--primary":            "oklch(0.52 0.22 340)",
-        "--primary-foreground": "oklch(1 0 0)",
-        "--ring":               "oklch(0.52 0.22 340)",
-    },
-    // ── Analytics dashboard feel: dark navy base, subtle blue tint, moderate elevation
-    "Dash": {
-        "--background":         "oklch(0.13 0.015 240)",
-        "--foreground":         "oklch(0.95 0 0)",
-        "--card":               "oklch(0.17 0.012 240)",
-        "--card-foreground":    "oklch(0.95 0 0)",
-        "--muted":              "oklch(0.20 0.009 240)",
-        "--muted-foreground":   "oklch(0.56 0 0)",
-        "--border":             "oklch(1 0 0 / 8%)",
-        "--accent":             "oklch(0.22 0.008 240)",
-        "--accent-foreground":  "oklch(0.95 0 0)",
-        "--primary":            "oklch(0.58 0.22 235)",
-        "--primary-foreground": "oklch(1 0 0)",
-        "--ring":               "oklch(0.58 0.22 235)",
-    },
-    // ── VS Code Dark+ feel: neutral grey, bigger elevation steps (+0.04 L), no tint
+    // VS Code Dark+ feel: neutral grey, bigger elevation steps (+0.04 L), no tint
     "VSCode": {
         "--background":         "oklch(0.15 0 0)",
         "--foreground":         "oklch(0.95 0 0)",
@@ -205,6 +147,11 @@ export const themes: Record<Exclude<ThemeName, "Custom">, Record<string, string>
         "--primary":            "oklch(0.55 0.22 250)",
         "--primary-foreground": "oklch(1 0 0)",
         "--ring":               "oklch(0.55 0.22 250)",
+        "--chart-1":            "oklch(0.68 0.18 250)",
+        "--chart-2":            "oklch(0.70 0.17 145)",
+        "--chart-3":            "oklch(0.82 0.16 90)",
+        "--chart-4":            "oklch(0.68 0.20 25)",
+        "--chart-5":            "oklch(0.65 0.14 200)",
     },
 }
 
@@ -214,12 +161,6 @@ export const THEME_SWATCHES: Record<Exclude<ThemeName, "Custom">, string> = {
     "Graphite": "oklch(0.38 0 0)",
     "Midnight": "oklch(0.40 0.10 230)",
     "Amethyst": "oklch(0.38 0.09 284)",
-    "Forest":   "oklch(0.35 0.09 160)",
-    "Linen":    "oklch(0.90 0.025 75)",
-    "Terminal": "oklch(0.50 0.20 142)",
-    "Ember":    "oklch(0.65 0.18 40)",
     "Ocean":    "oklch(0.55 0.15 195)",
-    "Rose":     "oklch(0.75 0.12 340)",
-    "Dash":     "oklch(0.42 0.12 240)",
     "VSCode":   "oklch(0.44 0 0)",
 }

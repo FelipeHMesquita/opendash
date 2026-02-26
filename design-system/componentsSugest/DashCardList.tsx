@@ -75,8 +75,8 @@ export function DashCardList() {
                                 className={cn(
                                     "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
                                     stat.positive
-                                        ? "bg-emerald-500/10 text-emerald-500"
-                                        : "bg-rose-500/10 text-rose-500"
+                                        ? "bg-success/10 text-success"
+                                        : "bg-destructive/10 text-destructive"
                                 )}
                             >
                                 {stat.positive ? (
@@ -103,16 +103,16 @@ export function DashCardList() {
                     <Table>
                         <TableHeader>
                             <TableRow className="border-border hover:bg-transparent">
-                                <TableHead className="py-4 text-xs/6 font-semibold text-muted-foreground">
+                                <TableHead className="py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">
                                     Order number
                                 </TableHead>
-                                <TableHead className="py-4 text-xs/6 font-semibold text-muted-foreground">
+                                <TableHead className="py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">
                                     Purchase date
                                 </TableHead>
-                                <TableHead className="py-4 text-xs/6 font-semibold text-muted-foreground">
+                                <TableHead className="py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">
                                     Customer
                                 </TableHead>
-                                <TableHead className="py-4 text-xs/6 font-semibold text-muted-foreground">
+                                <TableHead className="py-4 text-xs/6 font-semibold uppercase tracking-wider text-muted-foreground">
                                     Event
                                 </TableHead>
                                 <TableHead className="py-4 text-right text-xs/6 font-semibold text-muted-foreground">
