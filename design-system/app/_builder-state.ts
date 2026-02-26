@@ -5,9 +5,9 @@ import { arrayMove } from "@dnd-kit/sortable"
 export const CARD_OVERHEAD = 116
 
 export const DEVICE_PRESETS = [
-    { id: "desktop", label: "Desktop", width: 0   },
-    { id: "tablet",  label: "Tablet",  width: 768 },
-    { id: "mobile",  label: "Mobile",  width: 390 },
+    { id: "desktop", label: "Desktop", width: 0,   icon: "desktop" },
+    { id: "tablet",  label: "Tablet",  width: 768, icon: "tablet"  },
+    { id: "mobile",  label: "Mobile",  width: 390, icon: "mobile"  },
 ] as const
 export type DeviceId = (typeof DEVICE_PRESETS)[number]["id"]
 
@@ -33,53 +33,53 @@ export const PALETTE_SECTIONS: { title: string; items: PaletteEntry[] }[] = [
     {
         title: "Cards & Métricas",
         items: [
-            { id: "dash-card-list", name: "Dash Card List", description: "Cards de métricas com tabela resumida",    importStatement: 'import { DashCardList } from "@/componentsSugest/DashCardList"',   dataType: "Dashboard cards + table" },
-            { id: "stat-cards",     name: "Stat Cards",     description: "KPIs com variação e ícone",               importStatement: 'import { StatCardDemo } from "@/componentsSugest/StatCard"',       dataType: "{ label: string; value: string; change: number }[]" },
-            { id: "chart-card",     name: "Chart Card",     description: "Card com mini gráfico embutido",           importStatement: 'import { ChartCard } from "@/componentsSugest/ChartCard"',         dataType: "Metric card with sparkline" },
+            { id: "dash-card-list", name: "Dash Card List", description: "Cards de métricas com tabela resumida",    importStatement: 'import { DashCardList } from "@/componentsSugest/DashCardList"',   dataType: "{ stats: { title: string; value: string; change: string; positive: boolean }[]; orders: { id: string; date: string; customer: string; event: string; amount: string }[] }" },
+            { id: "stat-cards",     name: "Stat Cards",     description: "KPIs com variação e ícone",               importStatement: 'import { StatCardDemo } from "@/componentsSugest/StatCard"',       dataType: "{ title: string; value: string; change: string; positive: boolean; description?: string }[]" },
+            { id: "chart-card",     name: "Chart Card",     description: "Card com mini gráfico embutido",           importStatement: 'import { ChartCard } from "@/componentsSugest/ChartCard"',         dataType: "{ weekly: { label: string; value: number }[]; monthly: { label: string; value: number }[] }" },
         ],
     },
     {
         title: "Tabelas",
         items: [
-            { id: "data-table",   name: "Data Table",   description: "Tabela de dados com ordenação e filtros", importStatement: 'import { DataTable } from "@/componentsSugest/DataTable"',     dataType: "Sortable data table" },
-            { id: "users-table",  name: "Users Table",  description: "Lista de usuários com avatar e ações",    importStatement: 'import { UsersTable } from "@/componentsSugest/UsersTable"',   dataType: "User management table" },
+            { id: "data-table",   name: "Data Table",   description: "Tabela de dados com ordenação e filtros", importStatement: 'import { DataTable } from "@/componentsSugest/DataTable"',     dataType: "{ id: string; name: string; status: string; priority: string; owner: string; updated: string }[]" },
+            { id: "users-table",  name: "Users Table",  description: "Lista de usuários com avatar e ações",    importStatement: 'import { UsersTable } from "@/componentsSugest/UsersTable"',   dataType: "{ name: string; title: string; email: string; role: string }[]" },
         ],
     },
     {
         title: "Layout",
         items: [
-            { id: "navbar-comp",    name: "Navbar",      description: "Barra de navegação superior",             importStatement: 'import { Navbar } from "@/componentsSugest/Navbar"',             dataType: "Navigation bar" },
-            { id: "sidebar-comp",   name: "Sidebar",     description: "Barra lateral de navegação",              importStatement: 'import { SidebarOpen } from "@/componentsSugest/SidebarOpen"',   dataType: "Sidebar navigation" },
+            { id: "navbar-comp",    name: "Navbar",      description: "Barra de navegação superior",             importStatement: 'import { Navbar } from "@/componentsSugest/Navbar"',             dataType: "Componente full-page (sem data props)" },
+            { id: "sidebar-comp",   name: "Sidebar",     description: "Barra lateral de navegação",              importStatement: 'import { SidebarOpen } from "@/componentsSugest/SidebarOpen"',   dataType: "Componente full-page (sem data props)" },
         ],
     },
     {
         title: "Interação",
         items: [
-            { id: "kanban-board",     name: "Kanban Board",     description: "Quadro de tarefas estilo kanban",        importStatement: 'import { KanbanBoard } from "@/componentsSugest/KanbanBoard"',         dataType: "Task board columns" },
-            { id: "activity-feed",    name: "Activity Feed",    description: "Feed de atividades recentes",            importStatement: 'import { ActivityFeed } from "@/componentsSugest/ActivityFeed"',       dataType: "Activity log entries" },
-            { id: "command-palette",  name: "Command Palette",  description: "Paleta de comandos estilo ⌘K",           importStatement: 'import { CommandPalette } from "@/componentsSugest/CommandPalette"', dataType: "Command search dialog" },
-            { id: "empty-state",      name: "Empty State",      description: "Estado vazio com ilustração e CTA",      importStatement: 'import { EmptyState } from "@/componentsSugest/EmptyState"',         dataType: "Empty state placeholder" },
+            { id: "kanban-board",     name: "Kanban Board",     description: "Quadro de tarefas estilo kanban",        importStatement: 'import { KanbanBoard } from "@/componentsSugest/KanbanBoard"',         dataType: "{ id: string; title: string; color: string; cards: { id: string; title: string; priority: string; tag: string }[] }[]" },
+            { id: "activity-feed",    name: "Activity Feed",    description: "Feed de atividades recentes",            importStatement: 'import { ActivityFeed } from "@/componentsSugest/ActivityFeed"',       dataType: "{ id: number; group: string; icon: string; color: string; title: string; description: string; time: string }[]" },
+            { id: "command-palette",  name: "Command Palette",  description: "Paleta de comandos estilo ⌘K",           importStatement: 'import { CommandPalette } from "@/componentsSugest/CommandPalette"', dataType: "{ icon: string; label: string; category: string; shortcut: string | null }[]" },
+            { id: "empty-state",      name: "Empty State",      description: "Estado vazio com ilustração e CTA",      importStatement: 'import { EmptyState } from "@/componentsSugest/EmptyState"',         dataType: "{ icon?: string; title: string; description: string; ctaLabel: string }" },
         ],
     },
     {
         title: "Formulários",
         items: [
-            { id: "form-page",   name: "Form Page",   description: "Formulário completo com validação",    importStatement: 'import { FormPage } from "@/componentsSugest/FormPage"',     dataType: "Form with validation" },
-            { id: "team-page",   name: "Team Page",   description: "Página de equipe com cards de membros", importStatement: 'import { TeamPage } from "@/componentsSugest/TeamPage"',     dataType: "Team member cards" },
+            { id: "form-page",   name: "Form Page",   description: "Formulário completo com validação",    importStatement: 'import { FormPage } from "@/componentsSugest/FormPage"',     dataType: "Componente full-page (sem data props)" },
+            { id: "team-page",   name: "Team Page",   description: "Página de equipe com cards de membros", importStatement: 'import { TeamPage } from "@/componentsSugest/TeamPage"',     dataType: "{ name: string; role: string; dept: string; online: boolean; initials: string }[]" },
         ],
     },
     {
         title: "Páginas",
         items: [
-            { id: "login-page",       name: "Login",              description: "Página de autenticação",                importStatement: 'import { LoginPage } from "@/componentsSugest/LoginPage"',                 dataType: "Auth page" },
-            { id: "signup-page",       name: "Sign Up",            description: "Página de cadastro",                    importStatement: 'import { SignUpPage } from "@/componentsSugest/SignUpPage"',               dataType: "Registration page" },
-            { id: "onboarding-page",   name: "Onboarding",         description: "Fluxo de boas-vindas",                  importStatement: 'import { OnboardingPage } from "@/componentsSugest/OnboardingPage"',       dataType: "Onboarding flow" },
-            { id: "settings-page",     name: "Settings",           description: "Página de configurações",               importStatement: 'import { SettingsPage } from "@/componentsSugest/SettingsPage"',           dataType: "Settings layout" },
-            { id: "account-settings",  name: "Account Settings",   description: "Configurações de conta",                importStatement: 'import { AccountSettings } from "@/componentsSugest/AccountSettings"',     dataType: "Account settings" },
-            { id: "general-settings",  name: "General Settings",   description: "Configurações gerais",                  importStatement: 'import { GeneralSettings } from "@/componentsSugest/GeneralSettings"',     dataType: "General settings" },
-            { id: "billing-page",      name: "Billing",            description: "Página de cobrança e planos",           importStatement: 'import { BillingPage } from "@/componentsSugest/BillingPage"',             dataType: "Billing layout" },
-            { id: "notifications-page",name: "Notifications",      description: "Central de notificações",               importStatement: 'import { NotificationsPage } from "@/componentsSugest/NotificationsPage"', dataType: "Notifications" },
-            { id: "error-page",        name: "Error",              description: "Página de erro (404/500)",              importStatement: 'import { ErrorPage } from "@/componentsSugest/ErrorPage"',                 dataType: "Error page" },
+            { id: "login-page",       name: "Login",              description: "Página de autenticação",                importStatement: 'import { LoginPage } from "@/componentsSugest/LoginPage"',                 dataType: "Componente full-page (sem data props)" },
+            { id: "signup-page",       name: "Sign Up",            description: "Página de cadastro",                    importStatement: 'import { SignUpPage } from "@/componentsSugest/SignUpPage"',               dataType: "Componente full-page (sem data props)" },
+            { id: "onboarding-page",   name: "Onboarding",         description: "Fluxo de boas-vindas",                  importStatement: 'import { OnboardingPage } from "@/componentsSugest/OnboardingPage"',       dataType: "Componente full-page (sem data props)" },
+            { id: "settings-page",     name: "Settings",           description: "Página de configurações",               importStatement: 'import { SettingsPage } from "@/componentsSugest/SettingsPage"',           dataType: "Componente full-page (sem data props)" },
+            { id: "account-settings",  name: "Account Settings",   description: "Configurações de conta",                importStatement: 'import { AccountSettings } from "@/componentsSugest/AccountSettings"',     dataType: "Componente full-page (sem data props)" },
+            { id: "general-settings",  name: "General Settings",   description: "Configurações gerais",                  importStatement: 'import { GeneralSettings } from "@/componentsSugest/GeneralSettings"',     dataType: "Componente full-page (sem data props)" },
+            { id: "billing-page",      name: "Billing",            description: "Página de cobrança e planos",           importStatement: 'import { BillingPage } from "@/componentsSugest/BillingPage"',             dataType: "Componente full-page (sem data props)" },
+            { id: "notifications-page",name: "Notifications",      description: "Central de notificações",               importStatement: 'import { NotificationsPage } from "@/componentsSugest/NotificationsPage"', dataType: "{ id: number; type: string; read: boolean; icon: string; color: string; title: string; description: string; time: string }[]" },
+            { id: "error-page",        name: "Error",              description: "Página de erro (404/500)",              importStatement: 'import { ErrorPage } from "@/componentsSugest/ErrorPage"',                 dataType: "Componente full-page (sem data props)" },
         ],
     },
 ]

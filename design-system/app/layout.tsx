@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Citerii UI",
-  description: "Gere um layout completo a partir da sua identidade visual.",
+  title: "Citerii UI — Dashboard Builder",
+  description: "Monte dashboards completos com componentes prontos e exporte a especificação.",
 };
 
 export default function RootLayout({

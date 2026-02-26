@@ -317,7 +317,7 @@ export function ThemePreview({
 
             {/* Dashboard Builder link */}
             <Link
-                href="/styleguide/dashboard-builder"
+                href="/"
                 className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary"
             >
                 <BuilderIcon />

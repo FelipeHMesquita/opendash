@@ -12,7 +12,7 @@ interface InspectResult {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ThemeInspectorButton() {
+export function ThemeInspectorButton({ label, className: btnClassName }: { label?: string; className?: string } = {}) {
     const [open, setOpen] = React.useState(false)
     const [logo, setLogo] = React.useState<File | null>(null)
     const [screenshots, setScreenshots] = React.useState<File[]>([])
@@ -122,9 +122,10 @@ export function ThemeInspectorButton() {
             <button
                 onClick={handleOpen}
                 title="Inspecionar tema a partir de imagens"
-                className="inline-flex items-center justify-center rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className={btnClassName ?? "inline-flex items-center justify-center rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"}
             >
                 <FlaskConical className="h-4 w-4" />
+                {label && <span className="ml-1.5">{label}</span>}
             </button>
 
             {/* Modal */}

@@ -192,7 +192,7 @@ export function PageConfigSidebar({
     const sortableIds = flatNodes.map(n => n.id)
 
     return (
-        <aside className="w-72 shrink-0 flex flex-col border-l border-border bg-card overflow-y-auto">
+        <aside className={cn("w-72 shrink-0 flex flex-col border-l border-border bg-card overflow-y-auto", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")}>
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
                 <div>
@@ -206,7 +206,7 @@ export function PageConfigSidebar({
             </div>
 
             {/* Tree */}
-            <div className="flex-1 overflow-y-auto py-2 px-1">
+            <div className={cn("flex-1 overflow-y-auto py-2 px-1", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")}>
                 <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
                     <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
                         {flatNodes.map(node => {

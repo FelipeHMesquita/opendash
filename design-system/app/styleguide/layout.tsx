@@ -24,12 +24,6 @@ function LayoutInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
     const { collapsed } = useSidebar()
 
-    // Builder page gets full-screen, no nav sidebar
-    const isBuilder = pathname.startsWith("/styleguide/dashboard-builder")
-    if (isBuilder) {
-        return <CartProvider>{children}</CartProvider>
-    }
-
     return (
         <div className="grid min-h-screen grid-cols-[auto_1fr] bg-background text-foreground">
             {/* Nav sidebar */}
