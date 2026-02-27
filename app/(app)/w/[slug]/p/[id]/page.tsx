@@ -1221,10 +1221,18 @@ function DashboardBuilderInner({
     }))
     const state = history.current
     const dispatch = historyDispatch as React.Dispatch<BuilderAction>
-    const activePage = state.pages.find(p => p.id === state.activePageId)!
+    const activePageMatch = state.pages.find(p => p.id === state.activePageId)
+    const activePage = activePageMatch ?? state.pages[0]
     const canvasItems = activePage.canvasItems
     const canUndo = history.past.length > 0
     const canRedo = history.future.length > 0
+
+    // Sync stale activePageId so dispatches (ADD_ITEM etc.) hit the right page
+    React.useEffect(() => {
+        if (!activePageMatch && state.pages.length > 0) {
+            dispatch({ type: "SET_ACTIVE_PAGE", pageId: state.pages[0].id })
+        }
+    }, [activePageMatch, state.pages, dispatch])
 
     // ── Transient UI state ───────────────────────────────────────────────────
     const [dragActiveId,       setDragActiveId]       = React.useState<string | null>(null)

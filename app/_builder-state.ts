@@ -653,11 +653,17 @@ export function createInitialState(): BuilderState {
 /** Migrate legacy persisted data (navLinks → navbarItems/sidebarItems) */
 export function migrateState(raw: Record<string, unknown>): BuilderState {
     const state = raw as unknown as BuilderState
+    // Ensure pages array is valid
+    if (!Array.isArray(state.pages) || state.pages.length === 0) return createInitialState()
+    // Fix stale activePageId
+    const validActiveId = state.pages.some(p => p.id === state.activePageId)
+        ? state.activePageId
+        : state.pages[0].id
     // Already migrated
     if (Array.isArray(state.navbarItems)) {
         // Ensure rightSidebarItems exists (added later)
-        if (!Array.isArray(state.rightSidebarItems)) return { ...state, rightSidebarItems: [] }
-        return state
+        if (!Array.isArray(state.rightSidebarItems)) return { ...state, activePageId: validActiveId, rightSidebarItems: [] }
+        return validActiveId !== state.activePageId ? { ...state, activePageId: validActiveId } : state
     }
     // Legacy format: navLinks array
     const legacyLinks = (raw as { navLinks?: { sourceType: string; sourceItemLabel: string; targetPageId: string }[] }).navLinks
@@ -673,7 +679,7 @@ export function migrateState(raw: Record<string, unknown>): BuilderState {
     // No default items — user adds links via "+ adicionar link"
     return {
         pages: state.pages,
-        activePageId: state.activePageId,
+        activePageId: validActiveId,
         navbarItems,
         sidebarItems,
         rightSidebarItems: [],
