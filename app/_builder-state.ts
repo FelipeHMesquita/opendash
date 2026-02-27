@@ -103,18 +103,65 @@ export const PALETTE_SECTIONS: { title: string; items: PaletteEntry[] }[] = [
         ],
     },
     {
-        title: "shadcn/ui",
+        title: "Navegação",
+        items: [
+            { id: "builder-breadcrumb",  name: "Breadcrumb",       description: "Hierarquia dinâmica (auto do sitemap)",   importStatement: 'import { BuilderBreadcrumb } from "@/componentsSugest/shadcn/BuilderBreadcrumb"', dataType: "Componente (sem data props)" },
+            { id: "pagination-card",     name: "Pagination",       description: "Paginação com números e setas",          importStatement: 'import { PaginationCard } from "@/componentsSugest/shadcn/PaginationCard"',       dataType: "Componente (sem data props)" },
+            { id: "separator-card",      name: "Separator",        description: "Divisor horizontal e vertical",           importStatement: 'import { SeparatorCard } from "@/componentsSugest/shadcn/SeparatorCard"',         dataType: "Componente (sem data props)" },
+        ],
+    },
+    {
+        title: "Overlays",
+        items: [
+            { id: "dialog-card",         name: "Dialog",           description: "Modal para formulários e confirmações",   importStatement: 'import { DialogCard } from "@/componentsSugest/shadcn/DialogCard"',               dataType: "Componente (sem data props)" },
+            { id: "alert-dialog-card",   name: "Alert Dialog",     description: "Confirmação para ações destrutivas",      importStatement: 'import { AlertDialogCard } from "@/componentsSugest/shadcn/AlertDialogCard"',     dataType: "Componente (sem data props)" },
+            { id: "drawer-card",         name: "Drawer",           description: "Painel deslizante inferior",              importStatement: 'import { DrawerCard } from "@/componentsSugest/shadcn/DrawerCard"',               dataType: "Componente (sem data props)" },
+            { id: "sheet-card",          name: "Sheet",            description: "Painel lateral para detalhes",            importStatement: 'import { SheetCard } from "@/componentsSugest/shadcn/SheetCard"',                 dataType: "Componente (sem data props)" },
+        ],
+    },
+    {
+        title: "Feedback",
+        items: [
+            { id: "skeleton-card",       name: "Skeleton",         description: "Placeholders de carregamento",            importStatement: 'import { SkeletonCard } from "@/componentsSugest/shadcn/SkeletonCard"',           dataType: "Componente (sem data props)" },
+            { id: "tooltip-card",        name: "Tooltip",          description: "Dicas rápidas ao passar o mouse",         importStatement: 'import { TooltipCard } from "@/componentsSugest/shadcn/TooltipCard"',             dataType: "Componente (sem data props)" },
+            { id: "hover-card-card",     name: "Hover Card",       description: "Info expandida ao hover",                 importStatement: 'import { HoverCardCard } from "@/componentsSugest/shadcn/HoverCardCard"',         dataType: "Componente (sem data props)" },
+            { id: "popover-card",        name: "Popover",          description: "Conteúdo flutuante interativo",           importStatement: 'import { PopoverCard } from "@/componentsSugest/shadcn/PopoverCard"',             dataType: "Componente (sem data props)" },
+            { id: "progress-card",       name: "Progress",         description: "Barra de progresso animada",              importStatement: 'import { ProgressCard } from "@/componentsSugest/shadcn/ProgressCard"',           dataType: "Componente (sem data props)" },
+        ],
+    },
+    {
+        title: "Controles",
+        items: [
+            { id: "checkbox-card",       name: "Checkbox",         description: "Grupo de checkboxes de notificação",      importStatement: 'import { CheckboxCard } from "@/componentsSugest/shadcn/CheckboxCard"',           dataType: "Componente (sem data props)" },
+            { id: "select-card",         name: "Select",           description: "Dropdowns de timezone e idioma",          importStatement: 'import { SelectCard } from "@/componentsSugest/shadcn/SelectCard"',               dataType: "Componente (sem data props)" },
+            { id: "slider-card",         name: "Slider",           description: "Slider de volume e range",                importStatement: 'import { SliderCard } from "@/componentsSugest/shadcn/SliderCard"',               dataType: "Componente (sem data props)" },
+            { id: "toggle-card",         name: "Toggle",           description: "Toggle group e botões alternáveis",       importStatement: 'import { ToggleCard } from "@/componentsSugest/shadcn/ToggleCard"',               dataType: "Componente (sem data props)" },
+            { id: "switch-card",         name: "Switch",           description: "Switches on/off de preferências",         importStatement: 'import { SwitchCard } from "@/componentsSugest/shadcn/SwitchCard"',               dataType: "Componente (sem data props)" },
+            { id: "input-otp-card",      name: "Input OTP",        description: "Campo de código de verificação",          importStatement: 'import { InputOtpCard } from "@/componentsSugest/shadcn/InputOtpCard"',           dataType: "Componente (sem data props)" },
+            { id: "textarea-card",       name: "Textarea",         description: "Área de texto com envio",                 importStatement: 'import { TextareaCard } from "@/componentsSugest/shadcn/TextareaCard"',           dataType: "Componente (sem data props)" },
+        ],
+    },
+    {
+        title: "Menus",
+        items: [
+            { id: "dropdown-menu-card",  name: "Dropdown Menu",    description: "Menu de ações com atalhos",               importStatement: 'import { DropdownMenuCard } from "@/componentsSugest/shadcn/DropdownMenuCard"',   dataType: "Componente (sem data props)" },
+            { id: "context-menu-card",   name: "Context Menu",     description: "Menu de clique direito",                  importStatement: 'import { ContextMenuCard } from "@/componentsSugest/shadcn/ContextMenuCard"',     dataType: "Componente (sem data props)" },
+            { id: "menubar-card",        name: "Menubar",          description: "Barra de menus estilo desktop",           importStatement: 'import { MenubarCard } from "@/componentsSugest/shadcn/MenubarCard"',             dataType: "Componente (sem data props)" },
+        ],
+    },
+    {
+        title: "Data",
+        items: [
+            { id: "calendar-single",     name: "Calendar",         description: "Seleção de data única",                   importStatement: 'import { CalendarSingleCard } from "@/componentsSugest/shadcn/CalendarSingleCard"', dataType: "Componente (sem data props)" },
+            { id: "calendar-range",      name: "Calendar Range",   description: "Seleção de intervalo de datas",           importStatement: 'import { CalendarRangeCard } from "@/componentsSugest/shadcn/CalendarRangeCard"', dataType: "Componente (sem data props)" },
+        ],
+    },
+    {
+        title: "Containers",
         items: [
             { id: "accordion-demo",      name: "Accordion",        description: "FAQ e seções expansíveis",               importStatement: 'import { AccordionDemo } from "@/componentsSugest/shadcn/AccordionDemo"',         dataType: "Componente (sem data props)" },
-            { id: "breadcrumb-demo",     name: "Breadcrumb",       description: "Navegação hierárquica com variantes",   importStatement: 'import { BreadcrumbDemo } from "@/componentsSugest/shadcn/BreadcrumbDemo"',        dataType: "Componente (sem data props)" },
             { id: "collapsible-demo",     name: "Collapsible",      description: "Blocos de conteúdo retráteis",           importStatement: 'import { CollapsibleDemo } from "@/componentsSugest/shadcn/AccordionDemo"',       dataType: "Componente (sem data props)" },
-            { id: "calendar-demo",        name: "Calendar",         description: "Seleção de datas com visualização mensal",importStatement: 'import { CalendarDemo } from "@/componentsSugest/shadcn/CalendarDemo"',           dataType: "Componente (sem data props)" },
             { id: "carousel-demo",        name: "Carousel",         description: "Navegação horizontal entre cards",       importStatement: 'import { CarouselDemo } from "@/componentsSugest/shadcn/CarouselDemo"',           dataType: "Componente (sem data props)" },
-            { id: "dialog-demo",          name: "Dialogs & Sheets", description: "Modais, drawers e sheets",              importStatement: 'import { DialogDemo } from "@/componentsSugest/shadcn/DialogDemo"',               dataType: "Componente (sem data props)" },
-            { id: "form-controls-demo",   name: "Form Controls",    description: "Checkbox, select, slider, toggle, OTP", importStatement: 'import { FormControlsDemo } from "@/componentsSugest/shadcn/FormControlsDemo"',   dataType: "Componente (sem data props)" },
-            { id: "menu-demo",            name: "Menus",            description: "Dropdown, context menu e menubar",       importStatement: 'import { MenuDemo } from "@/componentsSugest/shadcn/MenuDemo"',                   dataType: "Componente (sem data props)" },
-            { id: "navigation-demo",      name: "Navigation",       description: "Breadcrumb, paginação e separadores",   importStatement: 'import { NavigationDemo } from "@/componentsSugest/shadcn/NavigationDemo"',       dataType: "Componente (sem data props)" },
-            { id: "feedback-demo",        name: "Feedback",         description: "Skeleton, tooltip, hover card, popover", importStatement: 'import { FeedbackDemo } from "@/componentsSugest/shadcn/FeedbackDemo"',           dataType: "Componente (sem data props)" },
             { id: "resizable-demo",       name: "Resizable",        description: "Painéis redimensionáveis e scroll area", importStatement: 'import { ResizableDemo } from "@/componentsSugest/shadcn/ResizableDemo"',         dataType: "Componente (sem data props)" },
         ],
     },

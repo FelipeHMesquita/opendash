@@ -36,6 +36,31 @@ import { NavigationDemo } from "@/componentsSugest/shadcn/NavigationDemo"
 import { FeedbackDemo } from "@/componentsSugest/shadcn/FeedbackDemo"
 import { ResizableDemo } from "@/componentsSugest/shadcn/ResizableDemo"
 import { BreadcrumbDemo } from "@/componentsSugest/shadcn/BreadcrumbDemo"
+// Individual shadcn components
+import { BuilderBreadcrumb } from "@/componentsSugest/shadcn/BuilderBreadcrumb"
+import { PaginationCard } from "@/componentsSugest/shadcn/PaginationCard"
+import { SeparatorCard } from "@/componentsSugest/shadcn/SeparatorCard"
+import { DialogCard } from "@/componentsSugest/shadcn/DialogCard"
+import { AlertDialogCard } from "@/componentsSugest/shadcn/AlertDialogCard"
+import { DrawerCard } from "@/componentsSugest/shadcn/DrawerCard"
+import { SheetCard } from "@/componentsSugest/shadcn/SheetCard"
+import { SkeletonCard } from "@/componentsSugest/shadcn/SkeletonCard"
+import { TooltipCard } from "@/componentsSugest/shadcn/TooltipCard"
+import { HoverCardCard } from "@/componentsSugest/shadcn/HoverCardCard"
+import { PopoverCard } from "@/componentsSugest/shadcn/PopoverCard"
+import { ProgressCard } from "@/componentsSugest/shadcn/ProgressCard"
+import { CheckboxCard } from "@/componentsSugest/shadcn/CheckboxCard"
+import { SelectCard } from "@/componentsSugest/shadcn/SelectCard"
+import { SliderCard } from "@/componentsSugest/shadcn/SliderCard"
+import { ToggleCard } from "@/componentsSugest/shadcn/ToggleCard"
+import { SwitchCard } from "@/componentsSugest/shadcn/SwitchCard"
+import { InputOtpCard } from "@/componentsSugest/shadcn/InputOtpCard"
+import { TextareaCard } from "@/componentsSugest/shadcn/TextareaCard"
+import { DropdownMenuCard } from "@/componentsSugest/shadcn/DropdownMenuCard"
+import { ContextMenuCard } from "@/componentsSugest/shadcn/ContextMenuCard"
+import { MenubarCard } from "@/componentsSugest/shadcn/MenubarCard"
+import { CalendarSingleCard } from "@/componentsSugest/shadcn/CalendarSingleCard"
+import { CalendarRangeCard } from "@/componentsSugest/shadcn/CalendarRangeCard"
 import { BarGrouped, BarStacked, BarHorizontal } from "@/componentsSugest/charts/RechartsBarChart"
 import { AreaSimple, AreaStacked } from "@/componentsSugest/charts/RechartsAreaChart"
 import { LineSimple, LineMulti } from "@/componentsSugest/charts/RechartsLineChart"
@@ -239,6 +264,127 @@ export const componentRegistry: Record<string, RegistryEntry> = {
         name: "Breadcrumb",
         importStatement: 'import { BreadcrumbDemo } from "@/componentsSugest/shadcn/BreadcrumbDemo"',
         element: <BreadcrumbDemo />,
+    },
+    // ── Individual shadcn components ──────────────────────────────────────────
+    "builder-breadcrumb": {
+        name: "Breadcrumb (dinâmico)",
+        importStatement: 'import { BuilderBreadcrumb } from "@/componentsSugest/shadcn/BuilderBreadcrumb"',
+        element: <BuilderBreadcrumb />,
+    },
+    "pagination-card": {
+        name: "Pagination",
+        importStatement: 'import { PaginationCard } from "@/componentsSugest/shadcn/PaginationCard"',
+        element: <PaginationCard />,
+    },
+    "separator-card": {
+        name: "Separator",
+        importStatement: 'import { SeparatorCard } from "@/componentsSugest/shadcn/SeparatorCard"',
+        element: <SeparatorCard />,
+    },
+    "dialog-card": {
+        name: "Dialog",
+        importStatement: 'import { DialogCard } from "@/componentsSugest/shadcn/DialogCard"',
+        element: <DialogCard />,
+    },
+    "alert-dialog-card": {
+        name: "Alert Dialog",
+        importStatement: 'import { AlertDialogCard } from "@/componentsSugest/shadcn/AlertDialogCard"',
+        element: <AlertDialogCard />,
+    },
+    "drawer-card": {
+        name: "Drawer",
+        importStatement: 'import { DrawerCard } from "@/componentsSugest/shadcn/DrawerCard"',
+        element: <DrawerCard />,
+    },
+    "sheet-card": {
+        name: "Sheet",
+        importStatement: 'import { SheetCard } from "@/componentsSugest/shadcn/SheetCard"',
+        element: <SheetCard />,
+    },
+    "skeleton-card": {
+        name: "Skeleton",
+        importStatement: 'import { SkeletonCard } from "@/componentsSugest/shadcn/SkeletonCard"',
+        element: <SkeletonCard />,
+    },
+    "tooltip-card": {
+        name: "Tooltip",
+        importStatement: 'import { TooltipCard } from "@/componentsSugest/shadcn/TooltipCard"',
+        element: <TooltipCard />,
+    },
+    "hover-card-card": {
+        name: "Hover Card",
+        importStatement: 'import { HoverCardCard } from "@/componentsSugest/shadcn/HoverCardCard"',
+        element: <HoverCardCard />,
+    },
+    "popover-card": {
+        name: "Popover",
+        importStatement: 'import { PopoverCard } from "@/componentsSugest/shadcn/PopoverCard"',
+        element: <PopoverCard />,
+    },
+    "progress-card": {
+        name: "Progress",
+        importStatement: 'import { ProgressCard } from "@/componentsSugest/shadcn/ProgressCard"',
+        element: <ProgressCard />,
+    },
+    "checkbox-card": {
+        name: "Checkbox",
+        importStatement: 'import { CheckboxCard } from "@/componentsSugest/shadcn/CheckboxCard"',
+        element: <CheckboxCard />,
+    },
+    "select-card": {
+        name: "Select",
+        importStatement: 'import { SelectCard } from "@/componentsSugest/shadcn/SelectCard"',
+        element: <SelectCard />,
+    },
+    "slider-card": {
+        name: "Slider",
+        importStatement: 'import { SliderCard } from "@/componentsSugest/shadcn/SliderCard"',
+        element: <SliderCard />,
+    },
+    "toggle-card": {
+        name: "Toggle",
+        importStatement: 'import { ToggleCard } from "@/componentsSugest/shadcn/ToggleCard"',
+        element: <ToggleCard />,
+    },
+    "switch-card": {
+        name: "Switch",
+        importStatement: 'import { SwitchCard } from "@/componentsSugest/shadcn/SwitchCard"',
+        element: <SwitchCard />,
+    },
+    "input-otp-card": {
+        name: "Input OTP",
+        importStatement: 'import { InputOtpCard } from "@/componentsSugest/shadcn/InputOtpCard"',
+        element: <InputOtpCard />,
+    },
+    "textarea-card": {
+        name: "Textarea",
+        importStatement: 'import { TextareaCard } from "@/componentsSugest/shadcn/TextareaCard"',
+        element: <TextareaCard />,
+    },
+    "dropdown-menu-card": {
+        name: "Dropdown Menu",
+        importStatement: 'import { DropdownMenuCard } from "@/componentsSugest/shadcn/DropdownMenuCard"',
+        element: <DropdownMenuCard />,
+    },
+    "context-menu-card": {
+        name: "Context Menu",
+        importStatement: 'import { ContextMenuCard } from "@/componentsSugest/shadcn/ContextMenuCard"',
+        element: <ContextMenuCard />,
+    },
+    "menubar-card": {
+        name: "Menubar",
+        importStatement: 'import { MenubarCard } from "@/componentsSugest/shadcn/MenubarCard"',
+        element: <MenubarCard />,
+    },
+    "calendar-single": {
+        name: "Calendar",
+        importStatement: 'import { CalendarSingleCard } from "@/componentsSugest/shadcn/CalendarSingleCard"',
+        element: <CalendarSingleCard />,
+    },
+    "calendar-range": {
+        name: "Calendar Range",
+        importStatement: 'import { CalendarRangeCard } from "@/componentsSugest/shadcn/CalendarRangeCard"',
+        element: <CalendarRangeCard />,
     },
     // ── Charts (Recharts) ──────────────────────────────────────────────────────
     "bar-grouped": {

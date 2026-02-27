@@ -45,15 +45,33 @@ import { BillingPage } from "@/componentsSugest/BillingPage"
 import { NotificationsPage } from "@/componentsSugest/NotificationsPage"
 import { ErrorPage } from "@/componentsSugest/ErrorPage"
 import { AccordionDemo, CollapsibleDemo } from "@/componentsSugest/shadcn/AccordionDemo"
-import { CalendarDemo } from "@/componentsSugest/shadcn/CalendarDemo"
 import { CarouselDemo } from "@/componentsSugest/shadcn/CarouselDemo"
-import { DialogDemo } from "@/componentsSugest/shadcn/DialogDemo"
-import { FormControlsDemo } from "@/componentsSugest/shadcn/FormControlsDemo"
-import { MenuDemo } from "@/componentsSugest/shadcn/MenuDemo"
-import { NavigationDemo } from "@/componentsSugest/shadcn/NavigationDemo"
-import { FeedbackDemo } from "@/componentsSugest/shadcn/FeedbackDemo"
 import { ResizableDemo } from "@/componentsSugest/shadcn/ResizableDemo"
-import { BreadcrumbDemo } from "@/componentsSugest/shadcn/BreadcrumbDemo"
+// Individual shadcn components
+import { BuilderBreadcrumb } from "@/componentsSugest/shadcn/BuilderBreadcrumb"
+import { PaginationCard } from "@/componentsSugest/shadcn/PaginationCard"
+import { SeparatorCard } from "@/componentsSugest/shadcn/SeparatorCard"
+import { DialogCard } from "@/componentsSugest/shadcn/DialogCard"
+import { AlertDialogCard } from "@/componentsSugest/shadcn/AlertDialogCard"
+import { DrawerCard } from "@/componentsSugest/shadcn/DrawerCard"
+import { SheetCard } from "@/componentsSugest/shadcn/SheetCard"
+import { SkeletonCard } from "@/componentsSugest/shadcn/SkeletonCard"
+import { TooltipCard } from "@/componentsSugest/shadcn/TooltipCard"
+import { HoverCardCard } from "@/componentsSugest/shadcn/HoverCardCard"
+import { PopoverCard } from "@/componentsSugest/shadcn/PopoverCard"
+import { ProgressCard } from "@/componentsSugest/shadcn/ProgressCard"
+import { CheckboxCard } from "@/componentsSugest/shadcn/CheckboxCard"
+import { SelectCard } from "@/componentsSugest/shadcn/SelectCard"
+import { SliderCard } from "@/componentsSugest/shadcn/SliderCard"
+import { ToggleCard } from "@/componentsSugest/shadcn/ToggleCard"
+import { SwitchCard } from "@/componentsSugest/shadcn/SwitchCard"
+import { InputOtpCard } from "@/componentsSugest/shadcn/InputOtpCard"
+import { TextareaCard } from "@/componentsSugest/shadcn/TextareaCard"
+import { DropdownMenuCard } from "@/componentsSugest/shadcn/DropdownMenuCard"
+import { ContextMenuCard } from "@/componentsSugest/shadcn/ContextMenuCard"
+import { MenubarCard } from "@/componentsSugest/shadcn/MenubarCard"
+import { CalendarSingleCard } from "@/componentsSugest/shadcn/CalendarSingleCard"
+import { CalendarRangeCard } from "@/componentsSugest/shadcn/CalendarRangeCard"
 import {
     CARD_OVERHEAD, DEVICE_PRESETS, type DeviceId,
     PALETTE_SECTIONS, CHART_PALETTE, type ChartPaletteEntry, type PaletteEntry,
@@ -63,6 +81,7 @@ import {
     builderReducer, createInitialState, migrateState, type BuilderAction,
     buildTree, flattenTree, resolveLayout, pageHasLayoutOverride,
 } from "@/app/_builder-state"
+import { BuilderPageContext } from "@/app/_builder-page-context"
 import { PageConfigSidebar } from "@/app/_page-config-sidebar"
 import { generateExportText as generateExportTextFull, type ExportParams } from "@/app/_export-generator"
 import { ThemeInspectorButton } from "@/app/styleguide/_theme-inspector"
@@ -128,13 +147,22 @@ const CHART_COMPONENTS: Record<string, React.ComponentType> = {
     "login-page": LoginPage, "signup-page": SignUpPage, "onboarding-page": OnboardingPage,
     "settings-page": SettingsPage, "account-settings": AccountSettings, "general-settings": GeneralSettings,
     "billing-page": BillingPage, "notifications-page": NotificationsPage, "error-page": ErrorPage,
-    // shadcn/ui
+    // Containers
     "accordion-demo": AccordionDemo, "collapsible-demo": CollapsibleDemo,
-    "calendar-demo": CalendarDemo, "carousel-demo": CarouselDemo,
-    "dialog-demo": DialogDemo, "form-controls-demo": FormControlsDemo,
-    "menu-demo": MenuDemo, "navigation-demo": NavigationDemo,
-    "feedback-demo": FeedbackDemo, "resizable-demo": ResizableDemo,
-    "breadcrumb-demo": BreadcrumbDemo,
+    "carousel-demo": CarouselDemo, "resizable-demo": ResizableDemo,
+    // Navegação
+    "builder-breadcrumb": BuilderBreadcrumb, "pagination-card": PaginationCard, "separator-card": SeparatorCard,
+    // Overlays
+    "dialog-card": DialogCard, "alert-dialog-card": AlertDialogCard, "drawer-card": DrawerCard, "sheet-card": SheetCard,
+    // Feedback
+    "skeleton-card": SkeletonCard, "tooltip-card": TooltipCard, "hover-card-card": HoverCardCard, "popover-card": PopoverCard, "progress-card": ProgressCard,
+    // Controles
+    "checkbox-card": CheckboxCard, "select-card": SelectCard, "slider-card": SliderCard, "toggle-card": ToggleCard,
+    "switch-card": SwitchCard, "input-otp-card": InputOtpCard, "textarea-card": TextareaCard,
+    // Menus
+    "dropdown-menu-card": DropdownMenuCard, "context-menu-card": ContextMenuCard, "menubar-card": MenubarCard,
+    // Data
+    "calendar-single": CalendarSingleCard, "calendar-range": CalendarRangeCard,
 }
 
 // ─── Theme helper ──────────────────────────────────────────────────────────────
@@ -1760,6 +1788,7 @@ function DashboardBuilderInner({
 
             {/* ── Builder body ────────────────────────────────────────────────── */}
             <div className="relative flex flex-1 overflow-hidden">
+              <BuilderPageContext.Provider value={{ pages: state.pages, activePageId: state.activePageId }}>
                 <DndContext id={canvasDndId} sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
 
                     {/* Component palette */}
@@ -1894,6 +1923,7 @@ function DashboardBuilderInner({
                         })()}
                     </DragOverlay>
                 </DndContext>
+              </BuilderPageContext.Provider>
 
                 {/* Page config sidebar (overlay, outside canvas DndContext) */}
                 {showPageConfig && (
