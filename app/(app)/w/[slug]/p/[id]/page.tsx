@@ -4,11 +4,12 @@ import * as React from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
 import {
-    DndContext, DragOverlay, PointerSensor, useSensor, useSensors,
-    useDroppable, useDraggable, type DragStartEvent, type DragEndEvent, type DragOverEvent,
+    DndContext, PointerSensor, useSensor, useSensors,
+    type DragEndEvent,
 } from "@dnd-kit/core"
-import { SortableContext, useSortable, rectSortingStrategy, horizontalListSortingStrategy, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable"
+import { SortableContext, useSortable, horizontalListSortingStrategy, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import ReactGridLayout, { verticalCompactor, type LayoutItem, type Layout as RGLLayout } from "react-grid-layout"
 import { cn } from "@/lib/utils"
 import { useParams } from "next/navigation"
 import { useData } from "@/app/_data-context"
@@ -77,7 +78,8 @@ import {
     PALETTE_SECTIONS, CHART_PALETTE, type ChartPaletteEntry, type PaletteEntry,
     isLayoutComponent, type NavItem, getSelectedComponents,
     type CanvasItem, type Page, type PageId, type ResolvedLayout,
-    computeRows, snapColSpan, snapHeight, newId, newPageId,
+    RGL_COLS, RGL_ROW_HEIGHT, RGL_MARGIN, RGL_PADDING,
+    newId, newPageId,
     builderReducer, createInitialState, migrateState, type BuilderAction,
     buildTree, flattenTree, resolveLayout, pageHasLayoutOverride,
 } from "@/app/_builder-state"
@@ -787,20 +789,25 @@ function MockSidebar({
     )
 }
 
-// ─── Reference blocks ──────────────────────────────────────────────────────────
+// ─── Metabase-style SVG grid background ─────────────────────────────────────
 
-function ReferenceBlocks({ cols, opacity, blockSize, padV, padH, gap }: { cols: number; opacity: number; blockSize: number; padV: number; padH: number; gap: number }) {
-    const rows = 12
-    return (
-        <div className="absolute inset-0 pointer-events-none z-10" style={{ paddingTop: padV, paddingBottom: padV, paddingLeft: padH, paddingRight: padH }}>
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gridAutoRows: blockSize, gap, opacity: opacity / 100 }}>
-                {Array.from({ length: cols * rows }).map((_, i) => (
-                    <div key={i} style={{ background: "var(--primary)", borderRadius: 3, opacity: 0.18 }} />
-                ))}
-            </div>
-        </div>
-    )
+function buildGridSvg(containerWidth: number, strokeColor: string): string {
+    const [mx] = RGL_MARGIN
+    const [px] = RGL_PADDING
+    const usable = containerWidth - 2 * px
+    const cellW = (usable - (RGL_COLS - 1) * mx) / RGL_COLS
+    const rowH = RGL_ROW_HEIGHT + RGL_MARGIN[1]
+    const rects = Array.from({ length: RGL_COLS }, (_, i) => {
+        const x = px + i * (cellW + mx)
+        return `<rect x='${x}' y='0' width='${cellW}' height='${RGL_ROW_HEIGHT}' rx='3' fill='none' stroke='${strokeColor}' stroke-width='1'/>`
+    }).join("")
+    return `url("data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='${containerWidth}' height='${rowH}'>${rects}</svg>`
+    )}")`
 }
+
+// Module-level ref for pending palette drop (browser dataTransfer not readable during dragover)
+let _pendingDrop: { chartId: string; w: number; h: number } | null = null
 
 // ─── Palette item ──────────────────────────────────────────────────────────────
 
@@ -809,7 +816,6 @@ function ChevronDownIcon({ open }: { open: boolean }) {
 }
 
 function SidebarItem({ chart, onAdd, themeStyle }: { chart: ChartPaletteEntry; onAdd: () => void; themeStyle: React.CSSProperties }) {
-    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `sidebar-${chart.id}`, data: { type: "sidebar", chartId: chart.id } })
     const [showPreview, setShowPreview] = React.useState(false)
     const [pos, setPos] = React.useState<{ top: number; left: number } | null>(null)
     const eyeRef = React.useRef<HTMLButtonElement>(null)
@@ -826,8 +832,15 @@ function SidebarItem({ chart, onAdd, themeStyle }: { chart: ChartPaletteEntry; o
 
     return (
         <>
-            <div ref={setNodeRef} {...listeners} {...attributes}
-                className={cn("group relative flex items-center gap-2.5 rounded-md border border-border bg-background px-3 py-2 cursor-grab active:cursor-grabbing transition-opacity select-none", isDragging && "opacity-40")}>
+            <div
+                draggable
+                unselectable="on"
+                onDragStart={(e) => {
+                    e.dataTransfer.setData("text/plain", chart.id)
+                    _pendingDrop = { chartId: chart.id, w: isLayoutComponent(chart.id) ? RGL_COLS : 6, h: 4 }
+                }}
+                className="group relative flex items-center gap-2.5 rounded-md border border-border bg-background px-3 py-2 cursor-grab active:cursor-grabbing transition-opacity select-none"
+            >
                 <ComponentIcon id={chart.id} />
                 <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-foreground leading-snug">{chart.name}</p>
@@ -948,99 +961,36 @@ function PaletteSidebar({ onAdd, themeStyle, selectedIds }: { onAdd: (chartId: s
     )
 }
 
-// ─── Canvas card ───────────────────────────────────────────────────────────────
+// ─── Canvas card (RGL child) ────────────────────────────────────────────────
 
-function CanvasCard({
-    item, index, onRemove, onResize, onLink, pages, blockSize, gridCols, gap, suppressTransform,
+function RGLCanvasCard({
+    item, onRemove, onLink, pages,
 }: {
-    item: CanvasItem; index: number; onRemove: () => void
-    onResize: (id: string, patch: Partial<Pick<CanvasItem, "colSpan" | "heightPx">>) => void
+    item: CanvasItem; onRemove: () => void
     onLink: (instanceId: string, targetPageId: PageId | null) => void
     pages: Page[]
-    blockSize: number; gridCols: number; gap: number; suppressTransform?: boolean
 }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.instanceId })
     const cardRef = React.useRef<HTMLDivElement | null>(null)
     const [showLinkPopover, setShowLinkPopover] = React.useState(false)
 
     const layout = isLayoutComponent(item.chartId)
     const Component = CHART_COMPONENTS[item.chartId]
-    // When a fixed height is set, calculate the inner chart area height so recharts can resize
-    const chartHeight = item.heightPx > 0 ? Math.max(80, item.heightPx - CARD_OVERHEAD) : undefined
-
-    const isFullWidth = item.colSpan >= gridCols
-
-    const dndStyle: React.CSSProperties = {
-        transform: suppressTransform ? undefined : CSS.Transform.toString(transform),
-        transition: suppressTransform ? "none" : transition,
-        gridColumn: `span ${Math.min(item.colSpan, gridCols)}`,
-        // Fix vertical resize: alignSelf: start prevents grid row-stretch from overriding height
-        alignSelf: "start",
-        height: isDragging && isFullWidth ? 0 : (item.heightPx > 0 ? item.heightPx : undefined),
-        overflow: "hidden",
-        minWidth: 0,
-        ...(isDragging && isFullWidth && { minHeight: 0, padding: 0, margin: 0, border: "none" }),
-    }
-
-    function startWidthResize(e: React.MouseEvent) {
-        e.preventDefault(); e.stopPropagation()
-        const startX = e.clientX
-        const startPx = item.colSpan * blockSize + (item.colSpan - 1) * gap
-        let last = item.colSpan
-        const onMove = (ev: MouseEvent) => {
-            const next = snapColSpan(startPx + (ev.clientX - startX), blockSize, gridCols, gap)
-            if (next !== last) { last = next; onResize(item.instanceId, { colSpan: next }) }
-        }
-        const onUp = () => { document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp) }
-        document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp)
-    }
-
-    function startHeightResize(e: React.MouseEvent) {
-        e.preventDefault(); e.stopPropagation()
-        const startY = e.clientY
-        const startH = item.heightPx > 0 ? item.heightPx : (cardRef.current?.offsetHeight ?? 300)
-        let last = startH
-        const onMove = (ev: MouseEvent) => {
-            const next = snapHeight(startH + (ev.clientY - startY), blockSize, gap)
-            if (next !== last) { last = next; onResize(item.instanceId, { heightPx: next }) }
-        }
-        const onUp = () => { document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp) }
-        document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp)
-    }
-
-    function startCornerResize(e: React.MouseEvent) {
-        e.preventDefault(); e.stopPropagation()
-        const startX = e.clientX, startY = e.clientY
-        const startPx = item.colSpan * blockSize + (item.colSpan - 1) * gap
-        const startH = item.heightPx > 0 ? item.heightPx : (cardRef.current?.offsetHeight ?? 300)
-        let lastSpan = item.colSpan, lastH = startH
-        const onMove = (ev: MouseEvent) => {
-            const nextSpan = snapColSpan(startPx + (ev.clientX - startX), blockSize, gridCols, gap)
-            const nextH = snapHeight(startH + (ev.clientY - startY), blockSize, gap)
-            if (nextSpan !== lastSpan || nextH !== lastH) {
-                lastSpan = nextSpan; lastH = nextH
-                onResize(item.instanceId, { colSpan: nextSpan, heightPx: nextH })
-            }
-        }
-        const onUp = () => { document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp) }
-        document.addEventListener("mousemove", onMove); document.addEventListener("mouseup", onUp)
-    }
+    const totalPx = item.h * RGL_ROW_HEIGHT + (item.h - 1) * RGL_MARGIN[1]
+    const chartHeight = Math.max(80, totalPx - CARD_OVERHEAD)
 
     return (
-        <div
-            ref={node => { setNodeRef(node); cardRef.current = node }}
-            style={dndStyle}
-            className={cn("relative group [&>*:first-child]:!p-0", isDragging && (isFullWidth ? "!overflow-hidden" : "opacity-0"))}
-        >
-            {Component && React.createElement(
-                Component as React.ComponentType<{ chartHeight?: number }>,
-                chartHeight !== undefined ? { chartHeight } : {}
-            )}
+        <div ref={cardRef} className="relative group">
+            {/* card-inner: visual boundary with overflow hidden */}
+            <div className="card-inner [&>*:first-child]:!p-0">
+                {Component && React.createElement(
+                    Component as React.ComponentType<{ chartHeight?: number }>,
+                    { chartHeight }
+                )}
+            </div>
 
-            {/* Controls overlay */}
-            <div className="absolute top-4 right-10 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                <div {...attributes} {...listeners}
-                    className="flex h-6 w-6 items-center justify-center rounded bg-card/90 backdrop-blur-sm border border-border/60 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shadow-sm pointer-events-auto">
+            {/* Drag handle + controls overlay */}
+            <div className="absolute top-3 right-8 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                <div className="card-drag-handle flex h-6 w-6 items-center justify-center rounded bg-card/90 backdrop-blur-sm border border-border/60 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shadow-sm pointer-events-auto">
                     <GripIcon />
                 </div>
                 <button onClick={() => setShowLinkPopover(v => !v)}
@@ -1052,7 +1002,7 @@ function CanvasCard({
                     <LinkIcon />
                 </button>
                 <span className="flex h-6 items-center px-1.5 rounded bg-card/90 backdrop-blur-sm border border-border/60 text-[10px] tabular-nums text-muted-foreground shadow-sm select-none">
-                    {layout ? "Full width" : <>{item.colSpan}/{gridCols}{item.heightPx > 0 ? ` · ${item.heightPx}px` : ""}</>}
+                    {layout ? "Full width" : <>{item.w}&times;{item.h}</>}
                 </span>
                 <button onClick={onRemove}
                     className="flex h-6 w-6 items-center justify-center rounded bg-card/90 backdrop-blur-sm border border-border/60 text-muted-foreground hover:text-foreground shadow-sm transition-colors pointer-events-auto"
@@ -1063,7 +1013,7 @@ function CanvasCard({
 
             {/* Link popover */}
             {showLinkPopover && (
-                <div className="absolute top-12 right-10 z-30">
+                <div className="absolute top-12 right-8 z-30">
                     <NavLinkPopover
                         anchorRef={cardRef}
                         pages={pages}
@@ -1083,109 +1033,32 @@ function CanvasCard({
                     <span className="text-[10px] text-primary/70">{pages.find(p => p.id === item.targetPageId)?.label}</span>
                 </div>
             )}
-
-            {/* Resize handles — hidden for layout components */}
-            {!layout && <>
-                <div onMouseDown={startWidthResize}
-                    className="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-1 h-10 rounded-full bg-primary/40 hover:bg-primary/80 transition-colors" />
-                </div>
-                <div onMouseDown={startHeightResize}
-                    className="absolute bottom-0 left-0 right-2 h-3 cursor-ns-resize z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="h-1 w-10 rounded-full bg-primary/40 hover:bg-primary/80 transition-colors" />
-                </div>
-                <div onMouseDown={startCornerResize}
-                    className="absolute bottom-0 right-0 w-5 h-5 cursor-nwse-resize z-40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-1">
-                    <div className="w-2.5 h-2.5 rounded-sm bg-primary/60 hover:bg-primary transition-colors" />
-                </div>
-            </>}
         </div>
     )
 }
 
-// ─── Preview card (no DnD, no resize, no controls) ──────────────────────────
+// ─── Preview card (RGL child, no controls) ──────────────────────────────────
 
-function PreviewCard({ item, gridCols, onNavigate }: {
-    item: CanvasItem; gridCols: number
+function RGLPreviewCard({ item, onNavigate }: {
+    item: CanvasItem
     onNavigate?: (pageId: PageId) => void
 }) {
     const linked = !!item.targetPageId
     const Component = CHART_COMPONENTS[item.chartId]
-    const chartHeight = item.heightPx > 0 ? Math.max(80, item.heightPx - CARD_OVERHEAD) : undefined
+    const totalPx = item.h * RGL_ROW_HEIGHT + (item.h - 1) * RGL_MARGIN[1]
+    const chartHeight = Math.max(80, totalPx - CARD_OVERHEAD)
 
     return (
         <div
-            style={{
-                gridColumn: `span ${Math.min(item.colSpan, gridCols)}`,
-                alignSelf: "start",
-                height: item.heightPx > 0 ? item.heightPx : undefined,
-                overflow: "hidden",
-                minWidth: 0,
-                cursor: linked ? "pointer" : undefined,
-            }}
-            className={cn("[&>*:first-child]:!p-0", linked && "hover:ring-2 hover:ring-primary/30 rounded-lg transition-all")}
+            className={cn("relative", linked && "cursor-pointer")}
             onClick={linked && item.targetPageId ? () => onNavigate?.(item.targetPageId!) : undefined}
         >
-            {Component && React.createElement(
-                Component as React.ComponentType<{ chartHeight?: number }>,
-                chartHeight !== undefined ? { chartHeight } : {}
-            )}
-        </div>
-    )
-}
-
-// ─── Placeholder card ─────────────────────────────────────────────────────
-
-function PlaceholderCard({ colSpan, heightPx, gridCols }: { colSpan: number; heightPx: number; gridCols: number }) {
-    return (
-        <div
-            style={{
-                gridColumn: `span ${Math.min(colSpan, gridCols)}`,
-                height: heightPx > 0 ? heightPx : 200,
-                alignSelf: "start",
-                minWidth: 0,
-            }}
-            className="rounded-lg border-[3px] border-dashed border-primary/60 bg-primary/5 flex items-center justify-center transition-all duration-200"
-        >
-            <span className="text-xs text-primary/50 font-medium select-none">
-                {colSpan}/{gridCols}
-            </span>
-        </div>
-    )
-}
-
-// ─── Content drop zone ─────────────────────────────────────────────────────────
-
-function ContentDropZone({
-    children, isEmpty, showGrid, gridCols, gridOpacity, blockSize, padV, padH, gap, hasDragPlaceholder, isDragActive,
-}: {
-    children: React.ReactNode; isEmpty: boolean; showGrid: boolean
-    gridCols: number; gridOpacity: number; blockSize: number; padV: number; padH: number; gap: number
-    hasDragPlaceholder?: boolean; isDragActive?: boolean
-}) {
-    const { isOver, setNodeRef } = useDroppable({ id: "canvas" })
-    const showEmptyState = isEmpty && !hasDragPlaceholder
-    return (
-        <div ref={setNodeRef} className="flex-1 relative min-h-full">
-            {showGrid && <ReferenceBlocks cols={gridCols} opacity={gridOpacity} blockSize={blockSize} padV={padV} padH={padH} gap={gap} />}
-            {showEmptyState ? (
-                <div className="flex flex-col flex-1 min-h-96" style={{ paddingTop: padV, paddingBottom: padV, paddingLeft: padH, paddingRight: padH }}>
-                    <div className={cn("flex flex-col items-center justify-center flex-1 w-full rounded-lg border-[3px] border-dashed transition-colors", isOver ? "border-primary/70 bg-primary/5" : "border-border/50")}>
-                        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground"><GridIcon /></div>
-                        <p className="text-sm font-medium text-muted-foreground">Comece o layout</p>
-                        <p className="mt-1 text-xs text-muted-foreground/50">Arraste gráficos da sidebar ou clique em <span className="inline-flex items-center"><PlusIcon /></span></p>
-                    </div>
-                </div>
-            ) : (
-                <div
-                    className={cn("relative z-20 min-h-full transition-colors", isOver && !hasDragPlaceholder && "ring-2 ring-inset ring-primary/20")}
-                    style={{ display: "grid", gridTemplateColumns: `repeat(${gridCols}, 1fr)`, gap, paddingTop: padV, paddingBottom: padV, paddingLeft: padH, paddingRight: padH, alignContent: "start" }}
-                >
-                    {/* Block chart tooltips during drag without changing DOM structure */}
-                    {isDragActive && <div className="absolute inset-0 z-10" />}
-                    {children}
-                </div>
-            )}
+            <div className={cn("card-inner [&>*:first-child]:!p-0", linked && "hover:ring-2 hover:ring-primary/30")}>
+                {Component && React.createElement(
+                    Component as React.ComponentType<{ chartHeight?: number }>,
+                    { chartHeight }
+                )}
+            </div>
         </div>
     )
 }
@@ -1263,9 +1136,6 @@ function DashboardBuilderInner({
     }, [activePageMatch, state.pages, dispatch])
 
     // ── Transient UI state ───────────────────────────────────────────────────
-    const [dragActiveId,       setDragActiveId]       = React.useState<string | null>(null)
-    const [ghostColSpan,       setGhostColSpan]       = React.useState(1)
-    const [dropIndicator,      setDropIndicator]      = React.useState<{ insertIdx: number; colSpan: number; heightPx: number } | null>(null)
     const [copied,             setCopied]             = React.useState(false)
     const [activeTheme,        setActiveTheme]        = React.useState(saved?.ui.activeTheme ?? "Light")
     const [showPageConfig,     setShowPageConfig]     = React.useState(false)
@@ -1324,8 +1194,6 @@ function DashboardBuilderInner({
 
     // Grid
     const [showGrid,    setShowGrid]    = React.useState(false)
-    const [gridCols,    setGridCols]    = React.useState(saved?.ui.gridCols ?? 12)
-    const [gridGap,     setGridGap]     = React.useState(saved?.ui.gridGap ?? 32)
     const [gridOpacity, setGridOpacity] = React.useState(saved?.ui.gridOpacity ?? 20)
 
     // Content margins
@@ -1342,8 +1210,8 @@ function DashboardBuilderInner({
         sidebarWidth: mockSidebarWidth, sidebarOpen: mockSidebarOpen,
         rightSidebarWidth: mockRightSidebarWidth, rightSidebarOpen: mockRightSidebarOpen,
         navbarItems: state.navbarItems, sidebarItems: state.sidebarItems, rightSidebarItems: state.rightSidebarItems,
-        gridCols, gridGap, padV, padH,
-    }), [showNavbar, showSidebar, showRightSidebar, mockSidebarWidth, mockSidebarOpen, mockRightSidebarWidth, mockRightSidebarOpen, state.navbarItems, state.sidebarItems, state.rightSidebarItems, gridCols, gridGap, padV, padH])
+        padV, padH,
+    }), [showNavbar, showSidebar, showRightSidebar, mockSidebarWidth, mockSidebarOpen, mockRightSidebarWidth, mockRightSidebarOpen, state.navbarItems, state.sidebarItems, state.rightSidebarItems, padV, padH])
 
     const activeLayout = React.useMemo(
         () => resolveLayout(state.pages, state.activePageId, rootLayout),
@@ -1362,12 +1230,12 @@ function DashboardBuilderInner({
                 activeTheme,
                 showNavbar, showSidebar, mockSidebarOpen, mockSidebarWidth,
                 showRightSidebar, mockRightSidebarOpen, mockRightSidebarWidth,
-                gridCols, gridGap, gridOpacity, padV, padH, deviceId,
+                gridOpacity, padV, padH, deviceId,
             },
         })
-    }, [state, activeTheme, showNavbar, showSidebar, mockSidebarOpen, mockSidebarWidth, showRightSidebar, mockRightSidebarOpen, mockRightSidebarWidth, gridCols, gridGap, gridOpacity, padV, padH, deviceId, onSave])
+    }, [state, activeTheme, showNavbar, showSidebar, mockSidebarOpen, mockSidebarWidth, showRightSidebar, mockRightSidebarOpen, mockRightSidebarWidth, gridOpacity, padV, padH, deviceId, onSave])
 
-    // Container width for snap calculations
+    // Container width for RGL
     const contentRef = React.useRef<HTMLDivElement>(null)
     const [containerWidth, setContainerWidth] = React.useState(900)
     React.useEffect(() => {
@@ -1376,36 +1244,18 @@ function DashboardBuilderInner({
         ro.observe(el); return () => ro.disconnect()
     }, [])
 
-    const blockSize = Math.max(20, (containerWidth - 2 * activeLayout.padH - (activeLayout.gridCols - 1) * activeLayout.gridGap) / activeLayout.gridCols)
+    // RGL layout array (derived from canvasItems)
+    const rglLayout: RGLLayout = React.useMemo(
+        () => canvasItems.map(item => ({ i: item.instanceId, x: item.x, y: item.y, w: item.w, h: item.h })),
+        [canvasItems],
+    )
 
-    const displayItems = React.useMemo(() => {
-        if (!dragActiveId) return canvasItems
-
-        // Sidebar drag → inject placeholder at insertIdx
-        if (dragActiveId.startsWith("sidebar-") && dropIndicator) {
-            const placeholder: CanvasItem = {
-                instanceId: "__drop_placeholder__",
-                chartId: "", name: "", description: "",
-                importStatement: "", dataType: "",
-                colSpan: dropIndicator.colSpan,
-                heightPx: dropIndicator.heightPx,
-            }
-            const result = [...canvasItems]
-            result.splice(dropIndicator.insertIdx, 0, placeholder)
-            return result
-        }
-
-        // Canvas reorder → useSortable handles visual feedback via CSS transforms
-        return canvasItems
-    }, [canvasItems, dragActiveId, dropIndicator])
-
-    // Keep layout components at full width when grid columns change
-    React.useEffect(() => {
-        dispatch({ type: "SYNC_LAYOUT_COLS", gridCols })
-    }, [gridCols])
-
-    const canvasDndId = React.useId()
-    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+    // Dropping item dimensions for RGL (read from _pendingDrop)
+    const droppingItem: LayoutItem = React.useMemo(
+        () => ({ i: "__dropping__", x: 0, y: 0, w: _pendingDrop?.w ?? 6, h: _pendingDrop?.h ?? 4 }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [_pendingDrop?.w, _pendingDrop?.h],
+    )
 
     // Theme vars applied as inline styles on the device frame (not on root)
     const themeStyle = React.useMemo(() => {
@@ -1422,115 +1272,56 @@ function DashboardBuilderInner({
         setActiveTheme(name)
     }
 
-    function addChart(chartId: string, insertBeforeId?: string | null, colSpan?: number) {
+    function addChart(chartId: string) {
         const entry = CHART_PALETTE.find(c => c.id === chartId); if (!entry) return
-        const layout = isLayoutComponent(chartId)
-        const defaultColSpan = layout ? activeLayout.gridCols : (colSpan ?? Math.min(6, activeLayout.gridCols))
-        const defaultHeightPx = layout ? 0 : Math.round(3 * blockSize + 2 * activeLayout.gridGap)
+        const w = isLayoutComponent(chartId) ? RGL_COLS : 6
+        const h = 4
         const newItem: CanvasItem = {
             instanceId: newId(), chartId: entry.id, name: entry.name,
             description: entry.description, importStatement: entry.importStatement,
-            dataType: entry.dataType, colSpan: defaultColSpan, heightPx: defaultHeightPx,
+            dataType: entry.dataType,
+            x: 0, y: Infinity, w, h,
         }
-        dispatch({ type: "ADD_ITEM", item: newItem, insertBeforeId: insertBeforeId ?? undefined })
+        dispatch({ type: "ADD_ITEM", item: newItem })
     }
 
     function removeItem(instanceId: string) { dispatch({ type: "REMOVE_ITEM", instanceId }) }
 
-    function resizeItem(instanceId: string, patch: Partial<Pick<CanvasItem, "colSpan" | "heightPx">>) {
-        dispatch({ type: "RESIZE_ITEM", instanceId, patch, gridCols: activeLayout.gridCols })
+    function handleLayoutChange(layout: RGLLayout) {
+        dispatch({ type: "UPDATE_LAYOUT", layout: layout.map(l => ({ i: l.i, x: l.x, y: l.y, w: l.w, h: l.h })) })
     }
 
-    function handleDragStart(e: DragStartEvent) {
-        const id = String(e.active.id)
-        setDragActiveId(id)
-        setDropIndicator(null)
-        if (id.startsWith("sidebar-")) {
-            setGhostColSpan(Math.min(6, activeLayout.gridCols))
-        } else {
-            const item = canvasItems.find(i => i.instanceId === id)
-            setGhostColSpan(item?.colSpan ?? Math.min(6, activeLayout.gridCols))
-        }
+    function handleDrop(_layout: RGLLayout, layoutItem: LayoutItem | undefined, e: Event) {
+        if (!layoutItem) return
+        const chartId = (e as DragEvent).dataTransfer?.getData("text/plain")
+        if (!chartId) return
+        const entry = CHART_PALETTE.find(c => c.id === chartId)
+        if (!entry) return
+        dispatch({ type: "ADD_ITEM", item: {
+            instanceId: newId(), chartId, name: entry.name,
+            description: entry.description, importStatement: entry.importStatement,
+            dataType: entry.dataType,
+            x: layoutItem.x, y: layoutItem.y,
+            w: layoutItem.w, h: layoutItem.h,
+        }})
+        _pendingDrop = null
     }
 
-    function handleDragOver({ over, active }: DragOverEvent) {
-        const id = String(active.id)
-        const defaultSpan = Math.min(6, activeLayout.gridCols)
-        const defaultHeight = Math.round(3 * blockSize + 2 * activeLayout.gridGap)
-
-        // ── Sidebar item ──────────────────────────────────────────────────────
-        if (id.startsWith("sidebar-")) {
-            if (!over || String(over.id) === "canvas") {
-                setGhostColSpan(defaultSpan)
-                // Canvas empty or hovering general area → append at end
-                setDropIndicator({ insertIdx: canvasItems.length, colSpan: defaultSpan, heightPx: defaultHeight })
-                return
-            }
-            const overIdx = canvasItems.findIndex(i => i.instanceId === String(over.id))
-            if (overIdx === -1) {
-                setGhostColSpan(defaultSpan)
-                setDropIndicator({ insertIdx: canvasItems.length, colSpan: defaultSpan, heightPx: defaultHeight })
-                return
-            }
-            const rows = computeRows(canvasItems, activeLayout.gridCols)
-            const targetRow = rows[overIdx]
-            const usedInRow = canvasItems.reduce((sum, item, i) =>
-                rows[i] === targetRow ? sum + item.colSpan : sum, 0)
-            const available = activeLayout.gridCols - usedInRow
-            const colSpan = Math.max(1, Math.min(defaultSpan, available > 0 ? available : defaultSpan))
-            setGhostColSpan(colSpan)
-            setDropIndicator({ insertIdx: overIdx, colSpan, heightPx: defaultHeight })
-            return
-        }
-
-        // ── Canvas reorder — let useSortable handle the visual animation ────
-        // No dropIndicator → suppressTransform stays false → smooth CSS transforms
-        setDropIndicator(null)
-    }
-
-    function handleDragEnd(e: DragEndEvent) {
-        const { active, over } = e
-        const indicator = dropIndicator
-        setDragActiveId(null)
-        setDropIndicator(null)
-        if (!over) return
-        const a = String(active.id)
-        if (a.startsWith("sidebar-")) {
-            const chartId = a.replace("sidebar-", "")
-            if (indicator) {
-                const entry = CHART_PALETTE.find(c => c.id === chartId)
-                if (!entry) return
-                const layout = isLayoutComponent(chartId)
-                const colSpan = layout ? activeLayout.gridCols : indicator.colSpan
-                const defaultHeight = layout ? 0 : Math.round(3 * blockSize + 2 * activeLayout.gridGap)
-                const newItem: CanvasItem = {
-                    instanceId: newId(), chartId: entry.id, name: entry.name,
-                    description: entry.description, importStatement: entry.importStatement,
-                    dataType: entry.dataType, colSpan, heightPx: defaultHeight,
-                }
-                dispatch({ type: "SPLICE_ITEM", item: newItem, insertIdx: indicator.insertIdx })
-            } else {
-                addChart(chartId, String(over.id) !== "canvas" ? String(over.id) : null, ghostColSpan)
-            }
-            return
-        }
-        const o = String(over.id)
-        if (a !== o) dispatch({ type: "REORDER_ITEMS", activeId: a, overId: o })
+    function handleDropDragOver(_e: React.DragEvent) {
+        if (!_pendingDrop) return undefined
+        return { w: _pendingDrop.w, h: _pendingDrop.h }
     }
 
     function handleExport() {
         const exportParams: ExportParams = {
             pages: state.pages, navbarItems: state.navbarItems, sidebarItems: state.sidebarItems, rightSidebarItems: state.rightSidebarItems,
-            themeName: activeTheme, gridCols, gridGap, padV, padH,
+            themeName: activeTheme, padV, padH,
             showNavbar, showSidebar, mockSidebarWidth, mockSidebarOpen,
             showRightSidebar, mockRightSidebarWidth, mockRightSidebarOpen,
         }
         const text = generateExportTextFull(exportParams)
         navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
     }
-
-    const activeSidebar = dragActiveId?.startsWith("sidebar-") ? CHART_PALETTE.find(c => `sidebar-${c.id}` === dragActiveId) : null
-    const activeCanvas  = dragActiveId && !dragActiveId.startsWith("sidebar-") ? canvasItems.find(i => i.instanceId === dragActiveId) : null
 
     // ─── Mini input helper ──────────────────────────────────────────────────────
     function NumInput({ value, onChange, min = 0, max = 999, step = 4, w = "w-14" }: { value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; w?: string }) {
@@ -1608,13 +1399,20 @@ function DashboardBuilderInner({
 
                     {/* Content */}
                     <div className={cn("flex-1 overflow-y-auto bg-background", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")}>
-                        <div
-                            style={{ display: "grid", gridTemplateColumns: `repeat(${activeLayout.gridCols}, 1fr)`, gap: activeLayout.gridGap, paddingTop: activeLayout.padV, paddingBottom: activeLayout.padV, paddingLeft: activeLayout.padH, paddingRight: activeLayout.padH }}
+                        <ReactGridLayout
+                            width={containerWidth}
+                            layout={rglLayout}
+                            gridConfig={{ cols: RGL_COLS, rowHeight: RGL_ROW_HEIGHT, margin: RGL_MARGIN, containerPadding: [activeLayout.padH, activeLayout.padV], maxRows: Infinity }}
+                            dragConfig={{ enabled: false, bounded: false, threshold: 3 }}
+                            resizeConfig={{ enabled: false, handles: ["se"] }}
+                            compactor={verticalCompactor}
                         >
                             {canvasItems.map(item => (
-                                <PreviewCard key={item.instanceId} item={item} gridCols={activeLayout.gridCols} onNavigate={(pageId) => dispatch({ type: "SET_ACTIVE_PAGE", pageId })} />
+                                <div key={item.instanceId}>
+                                    <RGLPreviewCard item={item} onNavigate={(pageId) => dispatch({ type: "SET_ACTIVE_PAGE", pageId })} />
+                                </div>
                             ))}
-                        </div>
+                        </ReactGridLayout>
                     </div>
                 </div>
 
@@ -1694,15 +1492,7 @@ function DashboardBuilderInner({
                     <button onClick={() => setShowGrid(v => !v)} className={cn("flex items-center gap-1.5 transition-colors", showGrid ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
                         <GridIcon /> Grid
                     </button>
-                    <span className="text-muted-foreground/40">·</span>
-                    <span className="text-muted-foreground">Cols</span>
-                    <select value={gridCols} onChange={e => setGridCols(Number(e.target.value))} className="h-5 rounded border border-border bg-background px-1 text-[10px] text-foreground">
-                        {[4,6,8,10,12,16].map(v => <option key={v} value={v}>{v}</option>)}
-                    </select>
-                    <span className="text-muted-foreground/40">·</span>
-                    <span className="text-muted-foreground">Gap</span>
-                    <NumInput value={gridGap} onChange={setGridGap} min={0} max={80} step={4} w="w-12" />
-                    <span className="text-muted-foreground/60">px</span>
+                    <span className="text-muted-foreground/40 text-[10px]">{RGL_COLS}col</span>
                     {showGrid && <>
                         <span className="text-muted-foreground/40">·</span>
                         <input type="range" min={5} max={60} value={gridOpacity} onChange={e => setGridOpacity(Number(e.target.value))} className="w-12 h-1 accent-primary" />
@@ -1789,7 +1579,6 @@ function DashboardBuilderInner({
             {/* ── Builder body ────────────────────────────────────────────────── */}
             <div className="relative flex flex-1 overflow-hidden">
               <BuilderPageContext.Provider value={{ pages: state.pages, activePageId: state.activePageId }}>
-                <DndContext id={canvasDndId} sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
 
                     {/* Component palette */}
                     <PaletteSidebar onAdd={addChart} themeStyle={themeStyle} selectedIds={selectedIds} />
@@ -1797,6 +1586,11 @@ function DashboardBuilderInner({
                     {/* Stage */}
                     <div className="flex-1 overflow-hidden flex flex-col p-8 gap-4 bg-white/[.02] [background-image:radial-gradient(oklch(1_0_0/0.12)_0.75px,transparent_0.75px)] [background-size:16px_16px]">
                         {(() => {
+                            // SVG grid background style
+                            const gridBg = showGrid && containerWidth > 0
+                                ? { backgroundImage: buildGridSvg(containerWidth, `oklch(0.62 0.22 284 / ${gridOpacity}%)`), backgroundRepeat: "repeat-y" as const }
+                                : {}
+
                             // Shared screen content (uses resolved activeLayout for inheritance)
                             const screenContent = (
                                 <>
@@ -1826,25 +1620,41 @@ function DashboardBuilderInner({
                                                 onReorderItem={(activeId, overId) => dispatch({ type: "REORDER_NAV_ITEM", target: "sidebar", activeId, overId, pageId: navEditPageId("sidebarItems") })}
                                             />
                                         )}
-                                        <div ref={contentRef} className={cn("flex-1 min-w-0 overflow-y-auto", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")}>
-                                            <SortableContext items={canvasItems.map(i => i.instanceId)} strategy={rectSortingStrategy}>
-                                                <ContentDropZone isEmpty={canvasItems.length === 0} hasDragPlaceholder={!!dropIndicator} showGrid={showGrid} gridCols={activeLayout.gridCols} gridOpacity={gridOpacity} blockSize={blockSize} padV={activeLayout.padV} padH={activeLayout.padH} gap={activeLayout.gridGap} isDragActive={!!dragActiveId}>
-                                                    {displayItems.map((item, idx) => {
-                                                        if (item.instanceId === "__drop_placeholder__") {
-                                                            return <PlaceholderCard key="placeholder" colSpan={item.colSpan} heightPx={item.heightPx} gridCols={activeLayout.gridCols} />
-                                                        }
-                                                        return (
-                                                            <CanvasCard key={item.instanceId} item={item} index={idx}
+                                        <div ref={contentRef} className={cn("flex-1 min-w-0 overflow-y-auto", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")} style={gridBg}>
+                                            {canvasItems.length === 0 ? (
+                                                <div className="flex flex-col flex-1 min-h-96" style={{ paddingTop: activeLayout.padV, paddingBottom: activeLayout.padV, paddingLeft: activeLayout.padH, paddingRight: activeLayout.padH }}>
+                                                    <div className="flex flex-col items-center justify-center flex-1 w-full rounded-lg border-[3px] border-dashed border-border/50">
+                                                        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground"><GridIcon /></div>
+                                                        <p className="text-sm font-medium text-muted-foreground">Comece o layout</p>
+                                                        <p className="mt-1 text-xs text-muted-foreground/50">Arraste gráficos da sidebar ou clique em <span className="inline-flex items-center"><PlusIcon /></span></p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <ReactGridLayout
+                                                    width={containerWidth}
+                                                    layout={rglLayout}
+                                                    gridConfig={{ cols: RGL_COLS, rowHeight: RGL_ROW_HEIGHT, margin: RGL_MARGIN, containerPadding: [activeLayout.padH, activeLayout.padV], maxRows: Infinity }}
+                                                    dragConfig={{ enabled: true, bounded: false, handle: ".card-drag-handle", threshold: 3 }}
+                                                    resizeConfig={{ enabled: true, handles: ["se"] }}
+                                                    dropConfig={{ enabled: true, defaultItem: { w: droppingItem.w, h: droppingItem.h } }}
+                                                    droppingItem={droppingItem}
+                                                    compactor={verticalCompactor}
+                                                    onLayoutChange={handleLayoutChange}
+                                                    onDrop={handleDrop}
+                                                    onDropDragOver={handleDropDragOver}
+                                                >
+                                                    {canvasItems.map(item => (
+                                                        <div key={item.instanceId}>
+                                                            <RGLCanvasCard
+                                                                item={item}
                                                                 onRemove={() => removeItem(item.instanceId)}
-                                                                onResize={resizeItem}
                                                                 onLink={(instanceId, targetPageId) => dispatch({ type: "LINK_ITEM", instanceId, targetPageId })}
                                                                 pages={state.pages}
-                                                                blockSize={blockSize} gridCols={activeLayout.gridCols} gap={activeLayout.gridGap}
-                                                                suppressTransform={!!dropIndicator} />
-                                                        )
-                                                    })}
-                                                </ContentDropZone>
-                                            </SortableContext>
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </ReactGridLayout>
+                                            )}
                                         </div>
                                         {activeLayout.showRightSidebar && (
                                             <MockSidebar
@@ -1890,42 +1700,9 @@ function DashboardBuilderInner({
 
                     </div>
 
-                    <DragOverlay dropAnimation={null}>
-                        {activeSidebar && (
-                            <div
-                                style={{ width: 200, pointerEvents: "none" }}
-                                className="rounded-lg bg-card border border-border shadow-2xl ring-2 ring-primary/60 px-4 py-3 flex items-center gap-2"
-                            >
-                                <ComponentIcon id={activeSidebar.id} />
-                                <span className="text-xs font-medium text-foreground truncate">{activeSidebar.name}</span>
-                            </div>
-                        )}
-                        {activeCanvas && (() => {
-                            const Component = CHART_COMPONENTS[activeCanvas.chartId]
-                            const actualWidth = activeCanvas.colSpan * blockSize + (activeCanvas.colSpan - 1) * gridGap
-                            const chartHeight = activeCanvas.heightPx > 0 ? Math.max(80, activeCanvas.heightPx - CARD_OVERHEAD) : undefined
-                            return (
-                                <div
-                                    style={{
-                                        width: actualWidth,
-                                        height: activeCanvas.heightPx > 0 ? activeCanvas.heightPx : undefined,
-                                        pointerEvents: "none",
-                                        overflow: "hidden",
-                                    }}
-                                    className="rounded-lg bg-card border-2 border-primary/40 shadow-2xl opacity-70 [&>*:first-child]:!p-0"
-                                >
-                                    {Component && React.createElement(
-                                        Component as React.ComponentType<{ chartHeight?: number }>,
-                                        chartHeight !== undefined ? { chartHeight } : {}
-                                    )}
-                                </div>
-                            )
-                        })()}
-                    </DragOverlay>
-                </DndContext>
               </BuilderPageContext.Provider>
 
-                {/* Page config sidebar (overlay, outside canvas DndContext) */}
+                {/* Page config sidebar (overlay) */}
                 {showPageConfig && (
                     <div className="absolute top-0 right-0 bottom-0 z-30 shadow-xl">
                         <PageConfigSidebar

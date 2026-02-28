@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "react-grid-layout/css/styles.css";
+@import "react-resizable/css/styles.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -228,4 +230,61 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+/* ============================================================
+   react-grid-layout — Metabase-style overrides
+   ============================================================ */
+
+/* Item wrapper: overflow visible so resize handle extends beyond border */
+.react-grid-item {
+  overflow: visible !important;
+}
+
+/* Card inner: clips content, provides visual boundary */
+.react-grid-item > .card-inner {
+  height: 100%;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: box-shadow 150ms, border-color 150ms;
+}
+.react-grid-item:hover > .card-inner {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* Resize handle — triangle at SE corner */
+.react-resizable-handle-se {
+  position: absolute !important;
+  bottom: -4px !important;
+  right: -4px !important;
+  width: 16px !important;
+  height: 16px !important;
+  cursor: nwse-resize;
+  opacity: 0;
+  transition: opacity 150ms;
+  background: none !important;
+  padding: 0 !important;
+}
+.react-resizable-handle-se::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  border-style: solid;
+  border-width: 0 0 10px 10px;
+  border-color: transparent transparent var(--primary) transparent;
+  opacity: 0.6;
+}
+.react-grid-item:hover .react-resizable-handle-se {
+  opacity: 1;
+}
+
+/* Drop placeholder */
+.react-grid-item.react-grid-placeholder {
+  background: var(--primary) !important;
+  opacity: 0.15 !important;
+  border-radius: 0.5rem;
 }

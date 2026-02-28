@@ -26,7 +26,7 @@ function CheckIcon() { return <svg width="10" height="10" viewBox="0 0 24 24" fi
 
 // ─── Layout overrides panel ─────────────────────────────────────────────────
 
-type OverrideField = "showNavbar" | "showSidebar" | "showRightSidebar" | "sidebarItems" | "rightSidebarItems" | "navbarItems" | "gridCols" | "gridGap" | "padV" | "padH" | "sidebarWidth" | "rightSidebarWidth"
+type OverrideField = "showNavbar" | "showSidebar" | "showRightSidebar" | "sidebarItems" | "rightSidebarItems" | "navbarItems" | "padV" | "padH" | "sidebarWidth" | "rightSidebarWidth"
 
 const OVERRIDE_GROUPS: { label: string; fields: { key: OverrideField; label: string }[] }[] = [
     {
@@ -48,8 +48,6 @@ const OVERRIDE_GROUPS: { label: string; fields: { key: OverrideField; label: str
     {
         label: "Grid",
         fields: [
-            { key: "gridCols", label: "Colunas" },
-            { key: "gridGap", label: "Gap" },
             { key: "padV", label: "Padding vertical" },
             { key: "padH", label: "Padding horizontal" },
         ],
@@ -130,11 +128,11 @@ function LayoutOverridesPanel({
         }
 
         // Number fields (grid, padding, sidebar width)
-        if (field === "gridCols" || field === "gridGap" || field === "padV" || field === "padH" || field === "sidebarWidth" || field === "rightSidebarWidth") {
+        if (field === "padV" || field === "padH" || field === "sidebarWidth" || field === "rightSidebarWidth") {
             if (!active) return <span className="text-[10px] text-muted-foreground/50">{String(value)}</span>
-            const min = field === "gridCols" ? 1 : field.includes("Width") ? 80 : 0
-            const max = field === "gridCols" ? 24 : field.includes("Width") ? 400 : 999
-            const step = field === "gridCols" ? 1 : 4
+            const min = field.includes("Width") ? 80 : 0
+            const max = field.includes("Width") ? 400 : 999
+            const step = 4
             return (
                 <input type="number" min={min} max={max} step={step} value={value as number}
                     onChange={e => setField(field, Math.max(min, Math.min(max, Number(e.target.value))))}

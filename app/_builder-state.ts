@@ -4,6 +4,12 @@ import { arrayMove } from "@dnd-kit/sortable"
 
 export const CARD_OVERHEAD = 116
 
+// react-grid-layout constants (Metabase-style)
+export const RGL_COLS = 24
+export const RGL_ROW_HEIGHT = 60
+export const RGL_MARGIN: [number, number] = [6, 6]
+export const RGL_PADDING: [number, number] = [6, 6]
+
 export const DEVICE_PRESETS = [
     { id: "desktop", label: "Desktop", width: 0,   icon: "desktop" },
     { id: "tablet",  label: "Tablet",  width: 768, icon: "tablet"  },
@@ -205,8 +211,10 @@ export interface NavItem {
 export type CanvasItem = {
     instanceId: string; chartId: string; name: string; description: string
     importStatement: string; dataType: string
-    colSpan: number   // 1..gridCols
-    heightPx: number  // 0 = auto
+    x: number         // column offset (0..RGL_COLS-1)
+    y: number         // row offset (in row units)
+    w: number         // width in columns
+    h: number         // height in row units
     targetPageId?: PageId | null  // link to another page (navigation on click)
 }
 
@@ -225,8 +233,6 @@ export interface PageLayout {
     navbarItems?: NavItem[]
     sidebarItems?: NavItem[]
     rightSidebarItems?: NavItem[]
-    gridCols?: number
-    gridGap?: number
     padV?: number
     padH?: number
 }
@@ -242,8 +248,6 @@ export interface ResolvedLayout {
     navbarItems: NavItem[]
     sidebarItems: NavItem[]
     rightSidebarItems: NavItem[]
-    gridCols: number
-    gridGap: number
     padV: number
     padH: number
 }
@@ -290,8 +294,6 @@ export function resolveLayout(
         if (L.navbarItems !== undefined) resolved.navbarItems = L.navbarItems
         if (L.sidebarItems !== undefined) resolved.sidebarItems = L.sidebarItems
         if (L.rightSidebarItems !== undefined) resolved.rightSidebarItems = L.rightSidebarItems
-        if (L.gridCols !== undefined) resolved.gridCols = L.gridCols
-        if (L.gridGap !== undefined) resolved.gridGap = L.gridGap
         if (L.padV !== undefined) resolved.padV = L.padV
         if (L.padH !== undefined) resolved.padH = L.padH
     }
@@ -348,45 +350,6 @@ export function newId() { return crypto.randomUUID() }
 
 export function newPageId() { return crypto.randomUUID() }
 
-export function computeRows(items: CanvasItem[], gridCols: number): number[] {
-    const rows: number[] = []
-    let used = 0, row = 0
-    for (const item of items) {
-        if (used + item.colSpan > gridCols) { row++; used = 0 }
-        rows.push(row)
-        used += item.colSpan
-    }
-    return rows
-}
-
-export function snapColSpan(targetPx: number, blockSize: number, maxCols: number, gap: number): number {
-    // Use floor so the card only grows when the cursor fully reaches the next column edge
-    const span = Math.floor(targetPx / (blockSize + gap)) + 1
-    return Math.max(1, Math.min(maxCols, span))
-}
-
-export function snapHeight(targetPx: number, blockSize: number, gridGap: number): number {
-    if (targetPx < blockSize * 0.4) return 0
-    const rowStride = blockSize + gridGap
-    const rows = Math.max(1, Math.round((targetPx + gridGap) / rowStride))
-    return Math.round(rows * blockSize + (rows - 1) * gridGap)
-}
-
-export function applyWidthResize(items: CanvasItem[], idx: number, newSpan: number, gridCols: number): CanvasItem[] {
-    const clamped = Math.max(1, Math.min(newSpan, gridCols))
-    const rows = computeRows(items, gridCols)
-    const myRow = rows[idx]
-    const nextIdx = rows.findIndex((r, i) => r === myRow && i > idx)
-    return items.map((item, i) => {
-        if (i === idx) return { ...item, colSpan: clamped }
-        if (i === nextIdx) {
-            const delta = clamped - items[idx].colSpan
-            return { ...item, colSpan: Math.max(1, item.colSpan - delta) }
-        }
-        return item
-    })
-}
-
 /** Build tree structure from flat pages array */
 export function buildTree(pages: Page[]): TreeNode[] {
     function getChildren(parentId: PageId | null, depth: number): TreeNode[] {
@@ -439,13 +402,10 @@ export type BuilderAction =
     | { type: "REORDER_PAGE"; pageId: PageId; direction: "up" | "down" }
     | { type: "SET_ACTIVE_PAGE"; pageId: PageId }
     // Canvas items (operates on active page)
-    | { type: "ADD_ITEM"; item: CanvasItem; insertBeforeId?: string }
+    | { type: "ADD_ITEM"; item: CanvasItem }
     | { type: "REMOVE_ITEM"; instanceId: string }
-    | { type: "RESIZE_ITEM"; instanceId: string; patch: Partial<Pick<CanvasItem, "colSpan" | "heightPx">>; gridCols: number }
-    | { type: "REORDER_ITEMS"; activeId: string; overId: string }
-    | { type: "SPLICE_ITEM"; item: CanvasItem; insertIdx: number }
     | { type: "SET_ITEMS"; items: CanvasItem[] }
-    | { type: "SYNC_LAYOUT_COLS"; gridCols: number }
+    | { type: "UPDATE_LAYOUT"; layout: Array<{ i: string; x: number; y: number; w: number; h: number }> }
     // Canvas item link
     | { type: "LINK_ITEM"; instanceId: string; targetPageId: PageId | null }
     // Nav items (pageId → edit page.layout; omit → edit global)
@@ -548,62 +508,25 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
 
         // ── Canvas items (active page) ──────────────────────────────────────
         case "ADD_ITEM":
-            return updateActivePage(state, page => {
-                if (action.insertBeforeId) {
-                    const idx = page.canvasItems.findIndex(i => i.instanceId === action.insertBeforeId)
-                    if (idx === -1) return { ...page, canvasItems: [...page.canvasItems, action.item] }
-                    return { ...page, canvasItems: [...page.canvasItems.slice(0, idx), action.item, ...page.canvasItems.slice(idx)] }
-                }
-                return { ...page, canvasItems: [...page.canvasItems, action.item] }
-            })
+            return updateActivePage(state, page => ({
+                ...page, canvasItems: [...page.canvasItems, action.item],
+            }))
         case "REMOVE_ITEM":
             return updateActivePage(state, page => ({
                 ...page,
                 canvasItems: page.canvasItems.filter(i => i.instanceId !== action.instanceId),
             }))
-        case "RESIZE_ITEM":
-            return updateActivePage(state, page => {
-                const idx = page.canvasItems.findIndex(i => i.instanceId === action.instanceId)
-                if (idx === -1) return page
-                if (isLayoutComponent(page.canvasItems[idx].chartId)) return page
-                let items = page.canvasItems
-                if (action.patch.colSpan !== undefined) items = applyWidthResize(items, idx, action.patch.colSpan, action.gridCols)
-                if (action.patch.heightPx !== undefined) items = items.map((i, ii) => ii === idx ? { ...i, heightPx: action.patch.heightPx! } : i)
-                return { ...page, canvasItems: items }
-            })
-        case "REORDER_ITEMS":
-            return updateActivePage(state, page => {
-                const oi = page.canvasItems.findIndex(i => i.instanceId === action.activeId)
-                const ni = page.canvasItems.findIndex(i => i.instanceId === action.overId)
-                if (oi === -1 || ni === -1) return page
-                return { ...page, canvasItems: arrayMove(page.canvasItems, oi, ni) }
-            })
-        case "SPLICE_ITEM":
-            return updateActivePage(state, page => {
-                const items = [...page.canvasItems]
-                items.splice(action.insertIdx, 0, action.item)
-                return { ...page, canvasItems: items }
-            })
         case "SET_ITEMS":
             return updateActivePage(state, page => ({ ...page, canvasItems: action.items }))
-        case "SYNC_LAYOUT_COLS":
-            return {
-                ...state,
-                pages: state.pages.map(page => {
-                    const needsUpdate = page.canvasItems.some(i =>
-                        isLayoutComponent(i.chartId) ? i.colSpan !== action.gridCols : i.colSpan > action.gridCols
-                    )
-                    if (!needsUpdate) return page
-                    return {
-                        ...page,
-                        canvasItems: page.canvasItems.map(i => {
-                            if (isLayoutComponent(i.chartId)) return { ...i, colSpan: action.gridCols }
-                            if (i.colSpan > action.gridCols) return { ...i, colSpan: action.gridCols }
-                            return i
-                        }),
-                    }
+        case "UPDATE_LAYOUT":
+            return updateActivePage(state, page => ({
+                ...page,
+                canvasItems: page.canvasItems.map(item => {
+                    const l = action.layout.find(li => li.i === item.instanceId)
+                    if (!l) return item
+                    return { ...item, x: l.x, y: l.y, w: l.w, h: l.h }
                 }),
-            }
+            }))
 
         // ── Canvas item link ────────────────────────────────────────────────
         case "LINK_ITEM":
@@ -697,7 +620,34 @@ export function createInitialState(): BuilderState {
     }
 }
 
-/** Migrate legacy persisted data (navLinks → navbarItems/sidebarItems) */
+// ─── RGL migration (colSpan/heightPx → x/y/w/h) ─────────────────────────────
+
+function migrateCanvasItemsToRGL(items: unknown[], oldGridCols: number): CanvasItem[] {
+    const scale = RGL_COLS / oldGridCols
+    let curX = 0, curY = 0, rowMaxH = 0
+    return (items as Record<string, unknown>[]).map(item => {
+        const w = Math.min(RGL_COLS, Math.round(((item.colSpan as number) ?? 6) * scale))
+        const h = typeof item.h === "number" ? item.h :
+            ((item.heightPx as number) > 0
+                ? Math.max(1, Math.ceil((item.heightPx as number) / (RGL_ROW_HEIGHT + RGL_MARGIN[1])))
+                : 4)
+        if (curX + w > RGL_COLS) { curX = 0; curY += rowMaxH; rowMaxH = 0 }
+        const x = curX, y = curY
+        curX += w; rowMaxH = Math.max(rowMaxH, h)
+        return {
+            instanceId: item.instanceId as string,
+            chartId: item.chartId as string,
+            name: item.name as string,
+            description: item.description as string,
+            importStatement: item.importStatement as string,
+            dataType: item.dataType as string,
+            x, y, w, h,
+            ...(item.targetPageId != null && { targetPageId: item.targetPageId as PageId }),
+        }
+    })
+}
+
+/** Migrate legacy persisted data */
 export function migrateState(raw: Record<string, unknown>): BuilderState {
     const state = raw as unknown as BuilderState
     // Ensure pages array is valid
@@ -706,11 +656,31 @@ export function migrateState(raw: Record<string, unknown>): BuilderState {
     const validActiveId = state.pages.some(p => p.id === state.activePageId)
         ? state.activePageId
         : state.pages[0].id
-    // Already migrated
+    // Already migrated to navbarItems format
     if (Array.isArray(state.navbarItems)) {
         // Ensure rightSidebarItems exists (added later)
-        if (!Array.isArray(state.rightSidebarItems)) return { ...state, activePageId: validActiveId, rightSidebarItems: [] }
-        return validActiveId !== state.activePageId ? { ...state, activePageId: validActiveId } : state
+        let result = state
+        if (!Array.isArray(state.rightSidebarItems)) result = { ...result, rightSidebarItems: [] }
+        if (validActiveId !== result.activePageId) result = { ...result, activePageId: validActiveId }
+        // Migrate canvas items from colSpan/heightPx to x/y/w/h
+        const needsRGL = result.pages.some(p =>
+            p.canvasItems.length > 0 &&
+            (p.canvasItems[0] as Record<string, unknown>).colSpan !== undefined &&
+            (p.canvasItems[0] as Record<string, unknown>).x === undefined
+        )
+        if (needsRGL) {
+            const oldGridCols = 12 // default from previous version
+            result = {
+                ...result,
+                pages: result.pages.map(p => ({
+                    ...p,
+                    canvasItems: p.canvasItems.length > 0
+                        ? migrateCanvasItemsToRGL(p.canvasItems as unknown[], oldGridCols)
+                        : p.canvasItems,
+                })),
+            }
+        }
+        return result
     }
     // Legacy format: navLinks array
     const legacyLinks = (raw as { navLinks?: { sourceType: string; sourceItemLabel: string; targetPageId: string }[] }).navLinks
@@ -723,9 +693,13 @@ export function migrateState(raw: Record<string, unknown>): BuilderState {
             else sidebarItems.push(item)
         }
     }
-    // No default items — user adds links via "+ adicionar link"
     return {
-        pages: state.pages,
+        pages: state.pages.map(p => ({
+            ...p,
+            canvasItems: p.canvasItems.length > 0
+                ? migrateCanvasItemsToRGL(p.canvasItems as unknown[], 12)
+                : p.canvasItems,
+        })),
         activePageId: validActiveId,
         navbarItems,
         sidebarItems,

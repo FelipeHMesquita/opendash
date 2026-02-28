@@ -1,7 +1,7 @@
 // ─── Comprehensive export generator ──────────────────────────────────────────
 // Generates a complete design specification in Markdown format (8 sections).
 
-import { type Page, type NavItem, buildTree, DEVICE_PRESETS } from "./_builder-state"
+import { type Page, type NavItem, buildTree, DEVICE_PRESETS, RGL_COLS, RGL_ROW_HEIGHT, RGL_MARGIN } from "./_builder-state"
 import { themes, type ThemeName, ALL_THEMES } from "./styleguide/_themes"
 import {
     TYPOGRAPHY_TOKENS, SPACING_SCALE, RADIUS_TOKENS, SHADOW_TOKENS,
@@ -19,8 +19,6 @@ export interface ExportParams {
     sidebarItems: NavItem[]
     rightSidebarItems: NavItem[]
     themeName: string
-    gridCols: number
-    gridGap: number
     padV: number
     padH: number
     showNavbar: boolean
@@ -130,7 +128,7 @@ function generateThemeTokensSection(params: ExportParams): string {
 // ─── Section 2: Layout Global ────────────────────────────────────────────────
 
 function generateLayoutSection(params: ExportParams): string {
-    const { showNavbar, showSidebar, mockSidebarWidth, mockSidebarOpen, showRightSidebar, mockRightSidebarWidth, mockRightSidebarOpen, gridCols, gridGap, padV, padH } = params
+    const { showNavbar, showSidebar, mockSidebarWidth, mockSidebarOpen, showRightSidebar, mockRightSidebarWidth, mockRightSidebarOpen, padV, padH } = params
     const lines: string[] = ["## 2. Layout Global"]
 
     lines.push("", "### Navbar")
@@ -153,16 +151,16 @@ function generateLayoutSection(params: ExportParams): string {
         lines.push(`- Estado inicial: ${mockRightSidebarOpen ? "expandida" : "colapsada"}`)
     }
 
-    lines.push("", "### Grid")
-    lines.push(`- Colunas: ${gridCols}`)
-    lines.push(`- Gap: ${gridGap}px`)
+    lines.push("", "### Grid (react-grid-layout)")
+    lines.push(`- Colunas: ${RGL_COLS}`)
+    lines.push(`- Altura da linha: ${RGL_ROW_HEIGHT}px`)
+    lines.push(`- Gap: ${RGL_MARGIN[0]}px`)
     lines.push(`- Padding vertical: ${padV}px`)
     lines.push(`- Padding horizontal: ${padH}px`)
 
     lines.push("", "### Variação Responsiva (recomendação)")
-    lines.push(`- Desktop: ${gridCols} colunas, gap ${gridGap}px`)
-    const tabletCols = Math.min(gridCols, 6)
-    lines.push(`- Tablet (768px): ${tabletCols} colunas, componentes > ${tabletCols}col → full-width`)
+    lines.push(`- Desktop: ${RGL_COLS} colunas, gap ${RGL_MARGIN[0]}px`)
+    lines.push(`- Tablet (768px): 12 colunas, componentes > 12col → full-width`)
     lines.push(`- Mobile (390px): 1 coluna, todos os componentes em stack vertical`)
 
     // Per-page layout overrides
@@ -217,7 +215,7 @@ function generateSitemapSection(params: ExportParams): string {
 // ─── Section 4: Componentes por Página ───────────────────────────────────────
 
 function generateComponentsSection(params: ExportParams): string {
-    const { pages, gridCols } = params
+    const { pages } = params
     const lines: string[] = ["## 4. Componentes por Página"]
 
     pages.forEach(page => {
@@ -229,10 +227,10 @@ function generateComponentsSection(params: ExportParams): string {
         }
 
         page.canvasItems.forEach((item, i) => {
+            const heightPx = item.h * RGL_ROW_HEIGHT + (item.h - 1) * RGL_MARGIN[1]
             lines.push("", `#### ${i + 1}. ${item.name}`)
             lines.push(`- Import: \`${item.importStatement}\``)
-            lines.push(`- Largura: ${item.colSpan}/${gridCols} colunas`)
-            if (item.heightPx > 0) lines.push(`- Altura: ${item.heightPx}px`)
+            lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (${item.w}/${RGL_COLS} colunas, ~${heightPx}px)`)
             lines.push(`- Schema: \`${item.dataType}\``)
 
             // Mock data from metadata

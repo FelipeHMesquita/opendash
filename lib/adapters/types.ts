@@ -44,8 +44,6 @@ export interface DashboardData {
         showRightSidebar?: boolean
         mockRightSidebarOpen?: boolean
         mockRightSidebarWidth?: number
-        gridCols: number
-        gridGap: number
         gridOpacity: number
         padV: number
         padH: number
