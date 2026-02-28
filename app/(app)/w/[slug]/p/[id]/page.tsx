@@ -78,7 +78,7 @@ import {
     PALETTE_SECTIONS, CHART_PALETTE, type ChartPaletteEntry, type PaletteEntry,
     isLayoutComponent, type NavItem, getSelectedComponents,
     type CanvasItem, type Page, type PageId, type ResolvedLayout,
-    RGL_COLS, RGL_ROW_HEIGHT, RGL_MARGIN, RGL_PADDING,
+    RGL_COLS, RGL_ROW_HEIGHT, RGL_MARGIN,
     newId, newPageId,
     builderReducer, createInitialState, migrateState, type BuilderAction,
     buildTree, flattenTree, resolveLayout, pageHasLayoutOverride,
@@ -215,6 +215,7 @@ function UndoIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fil
 function RedoIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6.69 3L21 13"/></svg> }
 function CopyIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> }
 function GridIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg> }
+function CellsIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="2" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/><rect x="16" y="9" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/></svg> }
 function NavbarIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg> }
 function SidebarIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg> }
 function SidebarRightIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg> }
@@ -790,20 +791,33 @@ function MockSidebar({
     )
 }
 
-// ─── Metabase-style SVG grid background ─────────────────────────────────────
+// ─── Grid & Cells SVG backgrounds ───────────────────────────────────────────
 
-function buildGridSvg(containerWidth: number, strokeColor: string): string {
+/** Column guides: vertical lines only (Figma-style) — contentWidth = container minus padding */
+function buildGridLinesSvg(contentWidth: number, strokeColor: string): string {
     const [mx] = RGL_MARGIN
-    const [px] = RGL_PADDING
-    const usable = containerWidth - 2 * px
-    const cellW = (usable - (RGL_COLS - 1) * mx) / RGL_COLS
-    const rowH = RGL_ROW_HEIGHT + RGL_MARGIN[1]
+    const cellW = (contentWidth - (RGL_COLS - 1) * mx) / RGL_COLS
+    const lines: string[] = []
+    for (let i = 0; i <= RGL_COLS; i++) {
+        const x = i * (cellW + mx) - mx / 2
+        lines.push(`<line x1='${x}' y1='0' x2='${x}' y2='1' stroke='${strokeColor}' stroke-width='0.5'/>`)
+    }
+    return `url("data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='${contentWidth}' height='1'>${lines.join("")}</svg>`
+    )}")`
+}
+
+/** Cell outlines: one rect per grid cell — contentWidth = container minus padding */
+function buildCellsSvg(contentWidth: number, strokeColor: string): string {
+    const [mx, my] = RGL_MARGIN
+    const cellW = (contentWidth - (RGL_COLS - 1) * mx) / RGL_COLS
+    const rowH = RGL_ROW_HEIGHT + my
     const rects = Array.from({ length: RGL_COLS }, (_, i) => {
-        const x = px + i * (cellW + mx)
+        const x = i * (cellW + mx)
         return `<rect x='${x}' y='0' width='${cellW}' height='${RGL_ROW_HEIGHT}' rx='3' fill='none' stroke='${strokeColor}' stroke-width='1'/>`
     }).join("")
     return `url("data:image/svg+xml,${encodeURIComponent(
-        `<svg xmlns='http://www.w3.org/2000/svg' width='${containerWidth}' height='${rowH}'>${rects}</svg>`
+        `<svg xmlns='http://www.w3.org/2000/svg' width='${contentWidth}' height='${rowH}'>${rects}</svg>`
     )}")`
 }
 
@@ -1193,8 +1207,9 @@ function DashboardBuilderInner({
         return () => window.removeEventListener("focus", handleFocus)
     }, [])
 
-    // Grid
+    // Grid & Cells
     const [showGrid,    setShowGrid]    = React.useState(false)
+    const [showCells,   setShowCells]   = React.useState(false)
     const [gridOpacity, setGridOpacity] = React.useState(saved?.ui.gridOpacity ?? 20)
 
     // Compactor
@@ -1273,8 +1288,8 @@ function DashboardBuilderInner({
 
     // ─── Memoized RGL config objects (prevents infinite useEffect loop) ──────
     const rglGridConfig = React.useMemo(
-        () => ({ cols: RGL_COLS, rowHeight: RGL_ROW_HEIGHT, margin: RGL_MARGIN, containerPadding: [activeLayout.padH, activeLayout.padV] as [number, number], maxRows: Infinity }),
-        [activeLayout.padH, activeLayout.padV],
+        () => ({ cols: RGL_COLS, rowHeight: RGL_ROW_HEIGHT, margin: RGL_MARGIN, containerPadding: [0, 0] as [number, number], maxRows: Infinity }),
+        [],
     )
     const rglDragConfig = React.useMemo(
         () => ({ enabled: true, bounded: false, handle: ".card-drag-handle", threshold: 3 }),
@@ -1300,10 +1315,29 @@ function DashboardBuilderInner({
         () => useCompactor ? verticalCompactor : noCompactor,
         [useCompactor],
     )
-    const rglMinHeightStyle = React.useMemo(
+    const rglStyle = React.useMemo(
         () => contentMinHeight > 0 ? { minHeight: contentMinHeight } : undefined,
         [contentMinHeight],
     )
+
+    // Content wrapper style: CSS padding (replaces RGL containerPadding) + grid/cells background
+    const contentWrapperStyle = React.useMemo(() => {
+        const s: React.CSSProperties = {
+            padding: `${activeLayout.padV}px ${activeLayout.padH}px`,
+        }
+        const stroke = `oklch(0.62 0.22 284 / ${gridOpacity}%)`
+        const layers: string[] = []
+        if (showGrid && containerWidth > 0) layers.push(buildGridLinesSvg(containerWidth, stroke))
+        if (showCells && containerWidth > 0) layers.push(buildCellsSvg(containerWidth, stroke))
+        if (layers.length > 0) {
+            s.backgroundImage = layers.join(", ")
+            s.backgroundRepeat = "repeat-y"
+            s.backgroundOrigin = "content-box"
+            s.backgroundClip = "content-box"
+            s.backgroundAttachment = "local"
+        }
+        return s
+    }, [activeLayout.padV, activeLayout.padH, gridOpacity, showGrid, showCells, containerWidth])
 
     // Theme vars applied as inline styles on the device frame (not on root)
     const themeStyle = React.useMemo(() => {
@@ -1477,7 +1511,7 @@ function DashboardBuilderInner({
                     )}
 
                     {/* Content */}
-                    <div ref={setContentRef} className={cn("flex-1 overflow-y-auto bg-background", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")}>
+                    <div ref={setContentRef} className={cn("flex-1 overflow-y-auto bg-background", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")} style={{ padding: `${activeLayout.padV}px ${activeLayout.padH}px` }}>
                         <ReactGridLayout
                             width={containerWidth}
                             layout={rglLayout}
@@ -1485,7 +1519,7 @@ function DashboardBuilderInner({
                             dragConfig={rglDragDisabled}
                             resizeConfig={rglResizeDisabled}
                             compactor={rglCompactor}
-                            style={rglMinHeightStyle}
+                            style={rglStyle}
                         >
                             {canvasItems.map(item => (
                                 <div key={item.instanceId} className="h-full">
@@ -1567,13 +1601,16 @@ function DashboardBuilderInner({
             {/* ── Controls bar ────────────────────────────────────────────────── */}
             <div className="shrink-0 flex items-center border-b border-border bg-card/60 px-4 h-9 text-xs gap-1 overflow-x-auto">
 
-                {/* Grid */}
+                {/* Grid & Cells */}
                 <div className="flex items-center gap-2 pr-3 shrink-0">
                     <button onClick={() => setShowGrid(v => !v)} className={cn("flex items-center gap-1.5 transition-colors", showGrid ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
                         <GridIcon /> Grid
                     </button>
+                    <button onClick={() => setShowCells(v => !v)} className={cn("flex items-center gap-1.5 transition-colors", showCells ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+                        <CellsIcon /> Cells
+                    </button>
                     <span className="text-muted-foreground/40 text-[10px]">{RGL_COLS}col</span>
-                    {showGrid && <>
+                    {(showGrid || showCells) && <>
                         <span className="text-muted-foreground/40">·</span>
                         <input type="range" min={5} max={60} value={gridOpacity} onChange={e => setGridOpacity(Number(e.target.value))} className="w-12 h-1 accent-primary" />
                         <span className="w-7 text-muted-foreground tabular-nums">{gridOpacity}%</span>
@@ -1678,11 +1715,6 @@ function DashboardBuilderInner({
                     {/* Stage */}
                     <div className="flex-1 overflow-hidden flex flex-col p-8 gap-4 bg-white/[.02] [background-image:radial-gradient(oklch(1_0_0/0.12)_0.75px,transparent_0.75px)] [background-size:16px_16px]">
                         {(() => {
-                            // SVG grid background style
-                            const gridBg = showGrid && containerWidth > 0
-                                ? { backgroundImage: buildGridSvg(containerWidth, `oklch(0.62 0.22 284 / ${gridOpacity}%)`), backgroundRepeat: "repeat-y" as const }
-                                : {}
-
                             // Shared screen content (uses resolved activeLayout for inheritance)
                             const screenContent = (
                                 <>
@@ -1712,9 +1744,9 @@ function DashboardBuilderInner({
                                                 onReorderItem={(activeId, overId) => dispatch({ type: "REORDER_NAV_ITEM", target: "sidebar", activeId, overId, pageId: navEditPageId("sidebarItems") })}
                                             />
                                         )}
-                                        <div ref={setContentRef} className={cn("flex-1 min-w-0 overflow-y-auto", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")} style={gridBg}>
+                                        <div ref={setContentRef} className={cn("flex-1 min-w-0 overflow-y-auto", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")} style={contentWrapperStyle}>
                                             {canvasItems.length === 0 ? (
-                                                <div className="flex flex-col flex-1 min-h-96" style={{ paddingTop: activeLayout.padV, paddingBottom: activeLayout.padV, paddingLeft: activeLayout.padH, paddingRight: activeLayout.padH }}>
+                                                <div className="flex flex-col flex-1 min-h-96">
                                                     <div className="flex flex-col items-center justify-center flex-1 w-full rounded-lg border-[3px] border-dashed border-border/50">
                                                         <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground"><GridIcon /></div>
                                                         <p className="text-sm font-medium text-muted-foreground">Comece o layout</p>
@@ -1731,7 +1763,7 @@ function DashboardBuilderInner({
                                                     dropConfig={rglDropConfig}
                                                     droppingItem={droppingItem}
                                                     compactor={rglCompactor}
-                                                    style={rglMinHeightStyle}
+                                                    style={rglStyle}
                                                     onDragStop={handleDragStop}
                                                     onResizeStop={handleResizeStop}
                                                     onDrop={handleDrop}
