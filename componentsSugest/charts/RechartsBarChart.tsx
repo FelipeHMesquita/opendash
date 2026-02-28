@@ -36,13 +36,13 @@ const LABELS_HORIZONTAL = { visitors: "Visitantes" }
 
 // ─── Vertical Grouped ────────────────────────────────────────────────────────
 
-export function BarGrouped() {
+export function BarGrouped({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Vertical — Grouped</h3>
                 <p className="text-xs text-muted-foreground mb-4">Duas séries lado a lado com legenda</p>
-                <div className={`${CHART_WRAPPER_CN} h-[250px] w-full`}>
+                <div className={CHART_WRAPPER_CN + " w-full"} style={{ height: chartHeight ?? 250 }}>
                     <ResponsiveContainer>
                         <BarChart data={DATA}>
                             <CartesianGrid vertical={false} />
@@ -62,13 +62,13 @@ export function BarGrouped() {
 
 // ─── Vertical Stacked ────────────────────────────────────────────────────────
 
-export function BarStacked() {
+export function BarStacked({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Vertical — Stacked</h3>
                 <p className="text-xs text-muted-foreground mb-4">Séries empilhadas</p>
-                <div className={`${CHART_WRAPPER_CN} h-[250px] w-full`}>
+                <div className={CHART_WRAPPER_CN + " w-full"} style={{ height: chartHeight ?? 250 }}>
                     <ResponsiveContainer>
                         <BarChart data={DATA}>
                             <CartesianGrid vertical={false} />
@@ -88,13 +88,13 @@ export function BarStacked() {
 
 // ─── Horizontal ──────────────────────────────────────────────────────────────
 
-export function BarHorizontal() {
+export function BarHorizontal({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Horizontal</h3>
                 <p className="text-xs text-muted-foreground mb-4">Barras horizontais com cores por categoria</p>
-                <div className={`${CHART_WRAPPER_CN} h-[250px] w-full`}>
+                <div className={CHART_WRAPPER_CN + " w-full"} style={{ height: chartHeight ?? 250 }}>
                     <ResponsiveContainer>
                         <BarChart data={DATA_HORIZONTAL} layout="vertical">
                             <CartesianGrid horizontal={false} />

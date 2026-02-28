@@ -38,13 +38,13 @@ function PieLegend({ data }: { data: typeof DATA_PIE }) {
 
 // ─── Pie ─────────────────────────────────────────────────────────────────────
 
-export function PieSimple() {
+export function PieSimple({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Pie</h3>
                 <p className="text-xs text-muted-foreground mb-4">Distribuição por navegador</p>
-                <div className={`${CHART_WRAPPER_CN} mx-auto aspect-square h-[250px]`}>
+                <div className={CHART_WRAPPER_CN + " mx-auto aspect-square"} style={{ height: chartHeight ?? 250 }}>
                     <ResponsiveContainer>
                         <PieChart>
                             <Tooltip content={<ChartTooltip hideLabel />} />
@@ -64,7 +64,7 @@ export function PieSimple() {
 
 // ─── Donut with label ────────────────────────────────────────────────────────
 
-export function PieDonut() {
+export function PieDonut({ chartHeight }: { chartHeight?: number }) {
     const totalVisitors = React.useMemo(
         () => DATA_PIE.reduce((acc, curr) => acc + curr.visitors, 0),
         []
@@ -75,7 +75,7 @@ export function PieDonut() {
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Donut com Label</h3>
                 <p className="text-xs text-muted-foreground mb-4">Total no centro</p>
-                <div className={`${CHART_WRAPPER_CN} mx-auto aspect-square h-[250px]`}>
+                <div className={CHART_WRAPPER_CN + " mx-auto aspect-square"} style={{ height: chartHeight ?? 250 }}>
                     <ResponsiveContainer>
                         <PieChart>
                             <Tooltip content={<ChartTooltip hideLabel />} />
@@ -111,13 +111,13 @@ export function PieDonut() {
 
 // ─── Separated ───────────────────────────────────────────────────────────────
 
-export function PieSeparated() {
+export function PieSeparated({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Pie Separado</h3>
                 <p className="text-xs text-muted-foreground mb-4">Fatias com espaçamento</p>
-                <div className={`${CHART_WRAPPER_CN} mx-auto aspect-square h-[250px]`}>
+                <div className={CHART_WRAPPER_CN + " mx-auto aspect-square"} style={{ height: chartHeight ?? 250 }}>
                     <ResponsiveContainer>
                         <PieChart>
                             <Tooltip content={<ChartTooltip hideLabel />} />

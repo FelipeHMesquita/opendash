@@ -28,13 +28,13 @@ const LABELS = { value: "Receita" }
 
 // ─── Simple ranked ───────────────────────────────────────────────────────────
 
-export function RankedSimple() {
+export function RankedSimple({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Ranking simples</h3>
                 <p className="text-xs text-muted-foreground mb-4">Barras ordenadas por valor decrescente</p>
-                <div className={`${CHART_WRAPPER_CN} h-[300px] w-full`}>
+                <div className={CHART_WRAPPER_CN + " w-full"} style={{ height: chartHeight ?? 300 }}>
                     <ResponsiveContainer>
                         <BarChart data={DATA} layout="vertical" margin={{ left: 20 }}>
                             <CartesianGrid horizontal={false} />
@@ -56,13 +56,13 @@ export function RankedSimple() {
 
 // ─── With category colors ────────────────────────────────────────────────────
 
-export function RankedCategory() {
+export function RankedCategory({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Por categoria</h3>
                 <p className="text-xs text-muted-foreground mb-4">Cores agrupadas por categoria</p>
-                <div className={`${CHART_WRAPPER_CN} h-[300px] w-full`}>
+                <div className={CHART_WRAPPER_CN + " w-full"} style={{ height: chartHeight ?? 300 }}>
                     <ResponsiveContainer>
                         <BarChart data={DATA} layout="vertical" margin={{ left: 20 }}>
                             <CartesianGrid horizontal={false} />

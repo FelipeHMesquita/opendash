@@ -28,13 +28,13 @@ const LABELS_SINGLE = { desktop: "Pontuação" }
 
 // ─── Simple ──────────────────────────────────────────────────────────────────
 
-export function RadarSimple() {
+export function RadarSimple({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Radar Simples</h3>
                 <p className="text-xs text-muted-foreground mb-4">Uma série com preenchimento</p>
-                <div className={`${CHART_WRAPPER_CN} mx-auto aspect-square h-[250px]`}>
+                <div className={CHART_WRAPPER_CN + " mx-auto aspect-square"} style={{ height: chartHeight ?? 250 }}>
                     <ResponsiveContainer>
                         <RadarChart data={DATA} outerRadius="65%" margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
                             <Tooltip content={<ChartTooltip labels={LABELS_SINGLE} />} />
@@ -51,13 +51,13 @@ export function RadarSimple() {
 
 // ─── Multi-series ────────────────────────────────────────────────────────────
 
-export function RadarMulti() {
+export function RadarMulti({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Radar Multi-série</h3>
                 <p className="text-xs text-muted-foreground mb-4">Comparação entre duas séries</p>
-                <div className={`${CHART_WRAPPER_CN} mx-auto aspect-square h-[250px]`}>
+                <div className={CHART_WRAPPER_CN + " mx-auto aspect-square"} style={{ height: chartHeight ?? 250 }}>
                     <ResponsiveContainer>
                         <RadarChart data={DATA} outerRadius="65%" margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
                             <Tooltip content={<ChartTooltip labels={LABELS} />} />

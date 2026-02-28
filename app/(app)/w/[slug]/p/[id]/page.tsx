@@ -9,7 +9,7 @@ import {
 } from "@dnd-kit/core"
 import { SortableContext, useSortable, horizontalListSortingStrategy, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import ReactGridLayout, { verticalCompactor, type LayoutItem, type Layout as RGLLayout } from "react-grid-layout"
+import ReactGridLayout, { verticalCompactor, noCompactor, type LayoutItem, type Layout as RGLLayout } from "react-grid-layout"
 import { cn } from "@/lib/utils"
 import { useParams } from "next/navigation"
 import { useData } from "@/app/_data-context"
@@ -227,6 +227,7 @@ function ChevronLeftIcon() { return <svg width="12" height="12" viewBox="0 0 24 
 function ChevronRightIcon() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg> }
 function SitemapIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="2" width="12" height="5" rx="1"/><rect x="1" y="17" width="8" height="5" rx="1"/><rect x="15" y="17" width="8" height="5" rx="1"/><path d="M12 7v4M5 17v-2a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v2"/></svg> }
 function BookOpenIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> }
+function CompactIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v6M12 22v-6"/><path d="M4 12h16"/><path d="M8 5l4-3 4 3"/><path d="M8 19l4 3 4-3"/></svg> }
 function EyeIcon() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> }
 function StarIcon() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> }
 
@@ -979,7 +980,7 @@ function RGLCanvasCard({
     const chartHeight = Math.max(80, totalPx - CARD_OVERHEAD)
 
     return (
-        <div ref={cardRef} className="relative group">
+        <div ref={cardRef} className="relative group h-full">
             {/* card-inner: visual boundary with overflow hidden */}
             <div className="card-inner [&>*:first-child]:!p-0">
                 {Component && React.createElement(
@@ -1050,7 +1051,7 @@ function RGLPreviewCard({ item, onNavigate }: {
 
     return (
         <div
-            className={cn("relative", linked && "cursor-pointer")}
+            className={cn("relative h-full", linked && "cursor-pointer")}
             onClick={linked && item.targetPageId ? () => onNavigate?.(item.targetPageId!) : undefined}
         >
             <div className={cn("card-inner [&>*:first-child]:!p-0", linked && "hover:ring-2 hover:ring-primary/30")}>
@@ -1196,9 +1197,15 @@ function DashboardBuilderInner({
     const [showGrid,    setShowGrid]    = React.useState(false)
     const [gridOpacity, setGridOpacity] = React.useState(saved?.ui.gridOpacity ?? 20)
 
+    // Compactor
+    const [useCompactor, setUseCompactor] = React.useState(saved?.ui.useCompactor ?? true)
+
     // Content margins
     const [padV, setPadV] = React.useState(saved?.ui.padV ?? 24)
     const [padH, setPadH] = React.useState(saved?.ui.padH ?? 24)
+
+    // Content min-height (free positioning)
+    const [contentMinHeight, setContentMinHeight] = React.useState(saved?.ui.contentMinHeight ?? 0)
 
     // Device / frame
     const [deviceId, setDeviceId] = React.useState<DeviceId>((saved?.ui.deviceId as DeviceId) ?? "desktop")
@@ -1230,10 +1237,10 @@ function DashboardBuilderInner({
                 activeTheme,
                 showNavbar, showSidebar, mockSidebarOpen, mockSidebarWidth,
                 showRightSidebar, mockRightSidebarOpen, mockRightSidebarWidth,
-                gridOpacity, padV, padH, deviceId,
+                gridOpacity, padV, padH, deviceId, useCompactor, contentMinHeight,
             },
         })
-    }, [state, activeTheme, showNavbar, showSidebar, mockSidebarOpen, mockSidebarWidth, showRightSidebar, mockRightSidebarOpen, mockRightSidebarWidth, gridOpacity, padV, padH, deviceId, onSave])
+    }, [state, activeTheme, showNavbar, showSidebar, mockSidebarOpen, mockSidebarWidth, showRightSidebar, mockRightSidebarOpen, mockRightSidebarWidth, gridOpacity, padV, padH, deviceId, useCompactor, contentMinHeight, onSave])
 
     // Container width for RGL
     const contentRef = React.useRef<HTMLDivElement>(null)
@@ -1323,6 +1330,20 @@ function DashboardBuilderInner({
         navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
     }
 
+    // ─── Height drag handle ─────────────────────────────────────────────────────
+    const startHeightDrag = React.useCallback((e: React.PointerEvent) => {
+        e.preventDefault()
+        const startY = e.clientY
+        const startH = contentMinHeight || (contentRef.current?.scrollHeight ?? 0)
+        const onMove = (ev: PointerEvent) => {
+            const delta = ev.clientY - startY
+            setContentMinHeight(Math.max(0, Math.round((startH + delta) / 60) * 60))
+        }
+        const onUp = () => { window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp) }
+        window.addEventListener("pointermove", onMove)
+        window.addEventListener("pointerup", onUp)
+    }, [contentMinHeight])
+
     // ─── Mini input helper ──────────────────────────────────────────────────────
     function NumInput({ value, onChange, min = 0, max = 999, step = 4, w = "w-14" }: { value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; w?: string }) {
         return <input type="number" min={min} max={max} step={step} value={value}
@@ -1405,10 +1426,11 @@ function DashboardBuilderInner({
                             gridConfig={{ cols: RGL_COLS, rowHeight: RGL_ROW_HEIGHT, margin: RGL_MARGIN, containerPadding: [activeLayout.padH, activeLayout.padV], maxRows: Infinity }}
                             dragConfig={{ enabled: false, bounded: false, threshold: 3 }}
                             resizeConfig={{ enabled: false, handles: ["se"] }}
-                            compactor={verticalCompactor}
+                            compactor={useCompactor ? verticalCompactor : noCompactor}
+                            style={contentMinHeight > 0 ? { minHeight: contentMinHeight } : undefined}
                         >
                             {canvasItems.map(item => (
-                                <div key={item.instanceId}>
+                                <div key={item.instanceId} className="h-full">
                                     <RGLPreviewCard item={item} onNavigate={(pageId) => dispatch({ type: "SET_ACTIVE_PAGE", pageId })} />
                                 </div>
                             ))}
@@ -1500,6 +1522,11 @@ function DashboardBuilderInner({
                     </>}
                 </div>
 
+                {/* Compactor */}
+                <button onClick={() => setUseCompactor((v: boolean) => !v)} className={cn("flex items-center gap-1.5 transition-colors shrink-0 px-2", useCompactor ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+                    <CompactIcon /> Compactar
+                </button>
+
                 <div className="h-4 w-px bg-border mx-1 shrink-0" />
 
                 {/* Layout mocks */}
@@ -1531,6 +1558,13 @@ function DashboardBuilderInner({
                     <NumInput value={padV} onChange={setPadV} min={0} max={120} step={4} w="w-12" />
                     <span className="text-muted-foreground/60 text-[10px]">H</span>
                     <NumInput value={padH} onChange={setPadH} min={0} max={120} step={4} w="w-12" />
+                    <span className="text-muted-foreground/60">px</span>
+                </div>
+
+                {/* Content height */}
+                <div className="flex items-center gap-2 px-2 shrink-0">
+                    <span className="text-muted-foreground">Altura</span>
+                    <NumInput value={contentMinHeight} onChange={setContentMinHeight} min={0} max={5000} step={60} w="w-14" />
                     <span className="text-muted-foreground/60">px</span>
                 </div>
 
@@ -1629,7 +1663,7 @@ function DashboardBuilderInner({
                                                         <p className="mt-1 text-xs text-muted-foreground/50">Arraste gráficos da sidebar ou clique em <span className="inline-flex items-center"><PlusIcon /></span></p>
                                                     </div>
                                                 </div>
-                                            ) : (
+                                            ) : (<>
                                                 <ReactGridLayout
                                                     width={containerWidth}
                                                     layout={rglLayout}
@@ -1638,13 +1672,14 @@ function DashboardBuilderInner({
                                                     resizeConfig={{ enabled: true, handles: ["se"] }}
                                                     dropConfig={{ enabled: true, defaultItem: { w: droppingItem.w, h: droppingItem.h } }}
                                                     droppingItem={droppingItem}
-                                                    compactor={verticalCompactor}
+                                                    compactor={useCompactor ? verticalCompactor : noCompactor}
+                                                    style={contentMinHeight > 0 ? { minHeight: contentMinHeight } : undefined}
                                                     onLayoutChange={handleLayoutChange}
                                                     onDrop={handleDrop}
                                                     onDropDragOver={handleDropDragOver}
                                                 >
                                                     {canvasItems.map(item => (
-                                                        <div key={item.instanceId}>
+                                                        <div key={item.instanceId} className="h-full">
                                                             <RGLCanvasCard
                                                                 item={item}
                                                                 onRemove={() => removeItem(item.instanceId)}
@@ -1654,7 +1689,15 @@ function DashboardBuilderInner({
                                                         </div>
                                                     ))}
                                                 </ReactGridLayout>
-                                            )}
+                                                {!useCompactor && (
+                                                    <div
+                                                        className="mx-auto mt-2 mb-4 flex h-3 w-24 cursor-row-resize items-center justify-center rounded-full bg-border/50 hover:bg-border transition-colors"
+                                                        onPointerDown={startHeightDrag}
+                                                    >
+                                                        <div className="h-px w-10 bg-muted-foreground/30" />
+                                                    </div>
+                                                )}
+                                            </>)}
                                         </div>
                                         {activeLayout.showRightSidebar && (
                                             <MockSidebar

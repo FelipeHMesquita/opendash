@@ -27,13 +27,13 @@ const DATA_STACKED = [{ month: "jan", desktop: 1260, mobile: 570 }]
 
 // ─── Gauge ───────────────────────────────────────────────────────────────────
 
-export function RadialGauge() {
+export function RadialGauge({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Gauge</h3>
                 <p className="text-xs text-muted-foreground mb-4">Métrica única</p>
-                <div className={`${CHART_WRAPPER_CN} mx-auto aspect-square h-[200px]`}>
+                <div className={CHART_WRAPPER_CN + " mx-auto aspect-square"} style={{ height: chartHeight ?? 200 }}>
                     <ResponsiveContainer>
                         <RadialBarChart data={DATA_SINGLE} startAngle={180} endAngle={0} innerRadius={80} outerRadius={130}>
                             <Tooltip content={<ChartTooltip hideLabel />} />
@@ -66,13 +66,13 @@ export function RadialGauge() {
 
 // ─── Multi ───────────────────────────────────────────────────────────────────
 
-export function RadialMulti() {
+export function RadialMulti({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Multi-série</h3>
                 <p className="text-xs text-muted-foreground mb-4">Barras radiais múltiplas</p>
-                <div className={`${CHART_WRAPPER_CN} mx-auto aspect-square h-[200px]`}>
+                <div className={CHART_WRAPPER_CN + " mx-auto aspect-square"} style={{ height: chartHeight ?? 200 }}>
                     <ResponsiveContainer>
                         <RadialBarChart data={DATA_MULTI} innerRadius={30} outerRadius={100}>
                             <Tooltip content={<ChartTooltip />} />
@@ -87,13 +87,13 @@ export function RadialMulti() {
 
 // ─── Stacked ─────────────────────────────────────────────────────────────────
 
-export function RadialStacked() {
+export function RadialStacked({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Stacked</h3>
                 <p className="text-xs text-muted-foreground mb-4">Duas séries sobrepostas</p>
-                <div className={`${CHART_WRAPPER_CN} mx-auto aspect-square h-[200px]`}>
+                <div className={CHART_WRAPPER_CN + " mx-auto aspect-square"} style={{ height: chartHeight ?? 200 }}>
                     <ResponsiveContainer>
                         <RadialBarChart data={DATA_STACKED} endAngle={180} innerRadius={80} outerRadius={130}>
                             <Tooltip content={<ChartTooltip hideLabel />} />

@@ -48,6 +48,8 @@ export interface DashboardData {
         padV: number
         padH: number
         deviceId: string
+        useCompactor?: boolean
+        contentMinHeight?: number
     }
 }
 

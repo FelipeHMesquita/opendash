@@ -37,13 +37,13 @@ const LABELS_STACKED = { desktop: "Desktop", mobile: "Mobile", tablet: "Tablet" 
 
 // ─── Simple ──────────────────────────────────────────────────────────────────
 
-export function AreaSimple() {
+export function AreaSimple({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Área Simples</h3>
                 <p className="text-xs text-muted-foreground mb-4">Duas séries com gradiente e legenda</p>
-                <div className={`${CHART_WRAPPER_CN} h-[250px] w-full`}>
+                <div className={CHART_WRAPPER_CN + " w-full"} style={{ height: chartHeight ?? 250 }}>
                     <ResponsiveContainer>
                         <AreaChart data={DATA}>
                             <CartesianGrid vertical={false} />
@@ -73,13 +73,13 @@ export function AreaSimple() {
 
 // ─── Stacked ─────────────────────────────────────────────────────────────────
 
-export function AreaStacked() {
+export function AreaStacked({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Área Stacked</h3>
                 <p className="text-xs text-muted-foreground mb-4">Três séries empilhadas com curva linear</p>
-                <div className={`${CHART_WRAPPER_CN} h-[250px] w-full`}>
+                <div className={CHART_WRAPPER_CN + " w-full"} style={{ height: chartHeight ?? 250 }}>
                     <ResponsiveContainer>
                         <AreaChart data={DATA_STACKED}>
                             <CartesianGrid vertical={false} />

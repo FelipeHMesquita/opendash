@@ -37,13 +37,13 @@ const LABELS_MULTI = { desktop: "Desktop", mobile: "Mobile", tablet: "Tablet" }
 
 // ─── Simple ──────────────────────────────────────────────────────────────────
 
-export function LineSimple() {
+export function LineSimple({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Linha Simples</h3>
                 <p className="text-xs text-muted-foreground mb-4">Duas séries com dots</p>
-                <div className={`${CHART_WRAPPER_CN} h-[250px] w-full`}>
+                <div className={CHART_WRAPPER_CN + " w-full"} style={{ height: chartHeight ?? 250 }}>
                     <ResponsiveContainer>
                         <LineChart data={DATA}>
                             <CartesianGrid vertical={false} />
@@ -63,13 +63,13 @@ export function LineSimple() {
 
 // ─── Multi-series ────────────────────────────────────────────────────────────
 
-export function LineMulti() {
+export function LineMulti({ chartHeight }: { chartHeight?: number }) {
     return (
         <div className="w-full p-8">
             <div className="rounded-lg border border-border bg-card p-6 space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Linha Multi-série</h3>
                 <p className="text-xs text-muted-foreground mb-4">Três séries com estilos variados</p>
-                <div className={`${CHART_WRAPPER_CN} h-[250px] w-full`}>
+                <div className={CHART_WRAPPER_CN + " w-full"} style={{ height: chartHeight ?? 250 }}>
                     <ResponsiveContainer>
                         <LineChart data={DATA_MULTI}>
                             <CartesianGrid vertical={false} />

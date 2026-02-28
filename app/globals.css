@@ -242,7 +242,7 @@
 }
 
 /* Card inner: clips content, provides visual boundary */
-.react-grid-item > .card-inner {
+.react-grid-item .card-inner {
   height: 100%;
   overflow: hidden;
   border-radius: 0.5rem;
@@ -251,8 +251,21 @@
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   transition: box-shadow 150ms, border-color 150ms;
 }
-.react-grid-item:hover > .card-inner {
+.react-grid-item:hover .card-inner {
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* Strip chart component's own card wrapper inside builder —
+   card-inner already provides border/bg/rounded/shadow */
+.card-inner > * {
+  height: 100% !important;
+}
+.card-inner > * > * {
+  height: 100% !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
 /* Resize handle — triangle at SE corner */
