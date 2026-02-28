@@ -73,10 +73,36 @@ import { ContextMenuCard } from "@/componentsSugest/shadcn/ContextMenuCard"
 import { MenubarCard } from "@/componentsSugest/shadcn/MenubarCard"
 import { CalendarSingleCard } from "@/componentsSugest/shadcn/CalendarSingleCard"
 import { CalendarRangeCard } from "@/componentsSugest/shadcn/CalendarRangeCard"
+import { ShapeElement } from "@/componentsSugest/ShapeElement"
+import { CardShapeElement } from "@/componentsSugest/CardShapeElement"
+import { ContainerElement } from "@/componentsSugest/ContainerElement"
+import { ButtonShowcase } from "@/componentsSugest/ButtonShowcase"
+import { AvatarShowcase } from "@/componentsSugest/AvatarShowcase"
+import { ThemeToggle } from "@/componentsSugest/ThemeToggle"
+import { ShapeConfigPopover } from "@/app/_shape-config-popover"
+import { CardShapeConfigPopover } from "@/app/_card-shape-config-popover"
+import { LoginConfigPopover } from "@/app/_login-config-popover"
+import { SignUpConfigPopover } from "@/app/_signup-config-popover"
+import { StatCardConfigPopover } from "@/app/_statcard-config-popover"
+import { KanbanConfigPopover } from "@/app/_kanban-config-popover"
+import { ContainerConfigPopover } from "@/app/_container-config-popover"
+import { ButtonConfigPopover } from "@/app/_button-config-popover"
+import { AvatarConfigPopover } from "@/app/_avatar-config-popover"
 import {
     CARD_OVERHEAD, DEVICE_PRESETS, type DeviceId,
     PALETTE_SECTIONS, CHART_PALETTE, type ChartPaletteEntry, type PaletteEntry,
-    isLayoutComponent, type NavItem, getSelectedComponents,
+    isLayoutComponent, isShapeItem, DEFAULT_SHAPE_CONFIG, type ShapeConfig,
+    isCardShapeItem, DEFAULT_CARD_SHAPE_CONFIG, type CardShapeConfig, type ItemConfig,
+    isLoginItem, DEFAULT_LOGIN_CONFIG, type LoginConfig,
+    isSignUpItem, DEFAULT_SIGNUP_CONFIG, type SignUpConfig,
+    isStatCardItem, DEFAULT_STAT_CARD_CONFIG, type StatCardConfig,
+    isKanbanItem, DEFAULT_KANBAN_CONFIG, type KanbanConfig,
+    isContainerItem, DEFAULT_CONTAINER_CONFIG, type ContainerConfig,
+    isButtonItem, DEFAULT_BUTTON_CONFIG, type ButtonConfig,
+    isAvatarItem, DEFAULT_AVATAR_CONFIG, type AvatarConfig,
+    isThemeToggleItem, DEFAULT_THEME_TOGGLE_CONFIG, type ThemeToggleConfig,
+    isConfigurableItem, getDefaultConfig, skipCardInner, getDefaultSize,
+    type NavItem, getSelectedComponents,
     type CanvasItem, type Page, type PageId, type ResolvedLayout,
     RGL_COLS, RGL_ROW_HEIGHT, RGL_MARGIN,
     newId, newPageId,
@@ -141,12 +167,12 @@ const CHART_COMPONENTS: Record<string, React.ComponentType> = {
     "radial-gauge": RadialGauge, "radial-multi": RadialMulti, "radial-stacked": RadialStacked,
     "ranked-simple": RankedSimple, "ranked-category": RankedCategory,
     "funnel-sales": FunnelSales, "funnel-marketing": FunnelMarketing,
-    "dash-card-list": DashCardList, "stat-cards": StatCardDemo, "chart-card": ChartCard,
+    "dash-card-list": DashCardList, "chart-card": ChartCard,
     "data-table": DataTable, "users-table": UsersTable,
     "navbar-comp": NavbarComponent, "sidebar-comp": SidebarOpen,
-    "kanban-board": KanbanBoard, "activity-feed": ActivityFeed, "command-palette": CommandPalette, "empty-state": EmptyState,
+    "activity-feed": ActivityFeed, "command-palette": CommandPalette, "empty-state": EmptyState,
     "form-page": FormPage, "team-page": TeamPage,
-    "login-page": LoginPage, "signup-page": SignUpPage, "onboarding-page": OnboardingPage,
+    "onboarding-page": OnboardingPage,
     "settings-page": SettingsPage, "account-settings": AccountSettings, "general-settings": GeneralSettings,
     "billing-page": BillingPage, "notifications-page": NotificationsPage, "error-page": ErrorPage,
     // Containers
@@ -230,6 +256,7 @@ function SitemapIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" 
 function BookOpenIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> }
 function CompactIcon() { return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v6M12 22v-6"/><path d="M4 12h16"/><path d="M8 5l4-3 4 3"/><path d="M8 19l4 3 4-3"/></svg> }
 function EyeIcon() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> }
+function SettingsIcon() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> }
 function StarIcon() { return <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> }
 
 function DeviceIconFor({ icon }: { icon: string }) {
@@ -363,6 +390,16 @@ function ComponentIcon({ id }: { id: string }) {
         "billing-page":      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
         "notifications-page":<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
         "error-page":        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>,
+        // Formas
+        "shape":             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="12" r="4" fill="currentColor" fillOpacity=".3"/></svg>,
+        "card-shape":        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6" y="6" width="5" height="5" rx="1" fill="currentColor" fillOpacity=".3"/><path d="M6 15h12M6 18h8"/></svg>,
+        "container":         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="3" strokeDasharray="4 2"/><path d="M6 6h12M6 10h8" strokeWidth="1.5"/></svg>,
+        // Botões
+        "button-single":     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="8" width="18" height="8" rx="2"/><path d="M8 12h8"/></svg>,
+        // Usuários
+        "avatar-single":     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>,
+        // Theme Toggle
+        "theme-toggle":      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>,
     }
     return <span className="text-muted-foreground flex items-center justify-center w-4 shrink-0">{map[id] ?? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>}</span>
 }
@@ -852,7 +889,8 @@ function SidebarItem({ chart, onAdd, themeStyle }: { chart: ChartPaletteEntry; o
                 unselectable="on"
                 onDragStart={(e) => {
                     e.dataTransfer.setData("text/plain", chart.id)
-                    _pendingDrop = { chartId: chart.id, w: isLayoutComponent(chart.id) ? RGL_COLS : 6, h: 4 }
+                    const sz = getDefaultSize(chart.id)
+                    _pendingDrop = { chartId: chart.id, w: sz.w, h: sz.h }
                 }}
                 className="group relative flex items-center gap-2.5 rounded-md border border-border bg-background px-3 py-2 cursor-grab active:cursor-grabbing transition-opacity select-none"
             >
@@ -979,36 +1017,92 @@ function PaletteSidebar({ onAdd, themeStyle, selectedIds }: { onAdd: (chartId: s
 // ─── Canvas card (RGL child) ────────────────────────────────────────────────
 
 function RGLCanvasCard({
-    item, onRemove, onLink, pages,
+    item, onRemove, onLink, onConfigChange, pages,
 }: {
     item: CanvasItem; onRemove: () => void
     onLink: (instanceId: string, targetPageId: PageId | null) => void
+    onConfigChange?: (instanceId: string, config: Partial<ItemConfig>) => void
     pages: Page[]
 }) {
     const cardRef = React.useRef<HTMLDivElement | null>(null)
     const [showLinkPopover, setShowLinkPopover] = React.useState(false)
+    const [showConfigPopover, setShowConfigPopover] = React.useState(false)
 
     const layout = isLayoutComponent(item.chartId)
-    const Component = CHART_COMPONENTS[item.chartId]
+    const configurable = isConfigurableItem(item.chartId)
+    const noCardInner = skipCardInner(item.chartId)
+    const Component = configurable ? null : CHART_COMPONENTS[item.chartId]
     const totalPx = item.h * RGL_ROW_HEIGHT + (item.h - 1) * RGL_MARGIN[1]
     const chartHeight = Math.max(80, totalPx - CARD_OVERHEAD)
 
+    // Render the correct configurable component based on chartId
+    function renderConfigurable() {
+        const cid = item.chartId
+        if (isShapeItem(cid)) return <ShapeElement config={(item.config as ShapeConfig) ?? DEFAULT_SHAPE_CONFIG} chartHeight={totalPx} />
+        if (isCardShapeItem(cid)) return <CardShapeElement config={(item.config as CardShapeConfig) ?? DEFAULT_CARD_SHAPE_CONFIG} chartHeight={totalPx} />
+        if (isContainerItem(cid)) return <ContainerElement config={(item.config as ContainerConfig) ?? DEFAULT_CONTAINER_CONFIG} />
+        if (isLoginItem(cid)) return <LoginPage config={(item.config as LoginConfig) ?? DEFAULT_LOGIN_CONFIG} />
+        if (isSignUpItem(cid)) return <SignUpPage config={(item.config as SignUpConfig) ?? DEFAULT_SIGNUP_CONFIG} />
+        if (isStatCardItem(cid)) return <StatCardDemo config={(item.config as StatCardConfig) ?? DEFAULT_STAT_CARD_CONFIG} />
+        if (isKanbanItem(cid)) return <KanbanBoard config={(item.config as KanbanConfig) ?? DEFAULT_KANBAN_CONFIG} />
+        if (isButtonItem(cid)) return <ButtonShowcase config={(item.config as ButtonConfig) ?? DEFAULT_BUTTON_CONFIG} />
+        if (isAvatarItem(cid)) return <AvatarShowcase config={(item.config as AvatarConfig) ?? DEFAULT_AVATAR_CONFIG} />
+        if (isThemeToggleItem(cid)) return <ThemeToggle config={(item.config as ThemeToggleConfig) ?? DEFAULT_THEME_TOGGLE_CONFIG} />
+        return null
+    }
+
+    // Render the correct config popover
+    function renderConfigPopover() {
+        if (!showConfigPopover || !onConfigChange) return null
+        const close = () => setShowConfigPopover(false)
+        const change = (partial: Partial<ItemConfig>) => onConfigChange(item.instanceId, partial)
+        const cid = item.chartId
+        if (isShapeItem(cid)) return <ShapeConfigPopover config={(item.config as ShapeConfig) ?? DEFAULT_SHAPE_CONFIG} onChange={change} onClose={close} />
+        if (isCardShapeItem(cid)) return <CardShapeConfigPopover config={(item.config as CardShapeConfig) ?? DEFAULT_CARD_SHAPE_CONFIG} onChange={change} onClose={close} />
+        if (isContainerItem(cid)) return <ContainerConfigPopover config={(item.config as ContainerConfig) ?? DEFAULT_CONTAINER_CONFIG} onChange={change} onClose={close} />
+        if (isLoginItem(cid)) return <LoginConfigPopover config={(item.config as LoginConfig) ?? DEFAULT_LOGIN_CONFIG} onChange={change} onClose={close} pages={pages} />
+        if (isSignUpItem(cid)) return <SignUpConfigPopover config={(item.config as SignUpConfig) ?? DEFAULT_SIGNUP_CONFIG} onChange={change} onClose={close} pages={pages} />
+        if (isStatCardItem(cid)) return <StatCardConfigPopover config={(item.config as StatCardConfig) ?? DEFAULT_STAT_CARD_CONFIG} onChange={change} onClose={close} />
+        if (isKanbanItem(cid)) return <KanbanConfigPopover config={(item.config as KanbanConfig) ?? DEFAULT_KANBAN_CONFIG} onChange={change} onClose={close} />
+        if (isButtonItem(cid)) return <ButtonConfigPopover config={(item.config as ButtonConfig) ?? DEFAULT_BUTTON_CONFIG} onChange={change} onClose={close} pages={pages} />
+        if (isAvatarItem(cid)) return <AvatarConfigPopover config={(item.config as AvatarConfig) ?? DEFAULT_AVATAR_CONFIG} onChange={change} onClose={close} />
+        return null
+    }
+
     return (
         <div ref={cardRef} className="relative group h-full">
-            {/* card-inner: visual boundary with overflow hidden */}
-            <div className="card-inner [&>*:first-child]:!p-0">
-                {Component && React.createElement(
-                    Component as React.ComponentType<{ chartHeight?: number }>,
-                    { chartHeight }
-                )}
-            </div>
+            {/* Render: configurable components or standard chart */}
+            {configurable ? (
+                noCardInner ? (
+                    <div className="h-full overflow-hidden">{renderConfigurable()}</div>
+                ) : (
+                    <div className="card-inner [&>*:first-child]:!p-0">{renderConfigurable()}</div>
+                )
+            ) : (
+                <div className="card-inner [&>*:first-child]:!p-0">
+                    {Component && React.createElement(
+                        Component as React.ComponentType<{ chartHeight?: number }>,
+                        { chartHeight }
+                    )}
+                </div>
+            )}
 
             {/* Drag handle + controls overlay */}
             <div className="absolute top-3 right-8 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                 <div className="card-drag-handle flex h-6 w-6 items-center justify-center rounded bg-card/90 backdrop-blur-sm border border-border/60 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shadow-sm pointer-events-auto">
                     <GripIcon />
                 </div>
-                <button onClick={() => setShowLinkPopover(v => !v)}
+                {configurable && (
+                    <button onClick={() => { setShowConfigPopover(v => !v); setShowLinkPopover(false) }}
+                        className={cn(
+                            "flex h-6 w-6 items-center justify-center rounded bg-card/90 backdrop-blur-sm border border-border/60 shadow-sm transition-colors pointer-events-auto",
+                            showConfigPopover ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                        )}
+                        title="Configurar">
+                        <SettingsIcon />
+                    </button>
+                )}
+                <button onClick={() => { setShowLinkPopover(v => !v); setShowConfigPopover(false) }}
                     className={cn(
                         "flex h-6 w-6 items-center justify-center rounded bg-card/90 backdrop-blur-sm border border-border/60 shadow-sm transition-colors pointer-events-auto",
                         item.targetPageId ? "text-primary" : "text-muted-foreground hover:text-foreground",
@@ -1025,6 +1119,9 @@ function RGLCanvasCard({
                     <XIcon />
                 </button>
             </div>
+
+            {/* Config popover */}
+            {renderConfigPopover()}
 
             {/* Link popover */}
             {showLinkPopover && (
@@ -1059,21 +1156,46 @@ function RGLPreviewCard({ item, onNavigate }: {
     onNavigate?: (pageId: PageId) => void
 }) {
     const linked = !!item.targetPageId
-    const Component = CHART_COMPONENTS[item.chartId]
+    const configurable = isConfigurableItem(item.chartId)
+    const noCardInner = skipCardInner(item.chartId)
+    const Component = configurable ? null : CHART_COMPONENTS[item.chartId]
     const totalPx = item.h * RGL_ROW_HEIGHT + (item.h - 1) * RGL_MARGIN[1]
     const chartHeight = Math.max(80, totalPx - CARD_OVERHEAD)
+
+    function renderConfigurable() {
+        const cid = item.chartId
+        if (isShapeItem(cid)) return <ShapeElement config={(item.config as ShapeConfig) ?? DEFAULT_SHAPE_CONFIG} chartHeight={totalPx} />
+        if (isCardShapeItem(cid)) return <CardShapeElement config={(item.config as CardShapeConfig) ?? DEFAULT_CARD_SHAPE_CONFIG} chartHeight={totalPx} />
+        if (isContainerItem(cid)) return <ContainerElement config={(item.config as ContainerConfig) ?? DEFAULT_CONTAINER_CONFIG} />
+        if (isLoginItem(cid)) return <LoginPage config={(item.config as LoginConfig) ?? DEFAULT_LOGIN_CONFIG} />
+        if (isSignUpItem(cid)) return <SignUpPage config={(item.config as SignUpConfig) ?? DEFAULT_SIGNUP_CONFIG} />
+        if (isStatCardItem(cid)) return <StatCardDemo config={(item.config as StatCardConfig) ?? DEFAULT_STAT_CARD_CONFIG} />
+        if (isKanbanItem(cid)) return <KanbanBoard config={(item.config as KanbanConfig) ?? DEFAULT_KANBAN_CONFIG} />
+        if (isButtonItem(cid)) return <ButtonShowcase config={(item.config as ButtonConfig) ?? DEFAULT_BUTTON_CONFIG} />
+        if (isAvatarItem(cid)) return <AvatarShowcase config={(item.config as AvatarConfig) ?? DEFAULT_AVATAR_CONFIG} />
+        if (isThemeToggleItem(cid)) return <ThemeToggle config={(item.config as ThemeToggleConfig) ?? DEFAULT_THEME_TOGGLE_CONFIG} />
+        return null
+    }
 
     return (
         <div
             className={cn("relative h-full", linked && "cursor-pointer")}
             onClick={linked && item.targetPageId ? () => onNavigate?.(item.targetPageId!) : undefined}
         >
-            <div className={cn("card-inner [&>*:first-child]:!p-0", linked && "hover:ring-2 hover:ring-primary/30")}>
-                {Component && React.createElement(
-                    Component as React.ComponentType<{ chartHeight?: number }>,
-                    { chartHeight }
-                )}
-            </div>
+            {configurable ? (
+                noCardInner ? (
+                    <div className={cn("h-full overflow-hidden", linked && "hover:ring-2 hover:ring-primary/30")}>{renderConfigurable()}</div>
+                ) : (
+                    <div className={cn("card-inner [&>*:first-child]:!p-0", linked && "hover:ring-2 hover:ring-primary/30")}>{renderConfigurable()}</div>
+                )
+            ) : (
+                <div className={cn("card-inner [&>*:first-child]:!p-0", linked && "hover:ring-2 hover:ring-primary/30")}>
+                    {Component && React.createElement(
+                        Component as React.ComponentType<{ chartHeight?: number }>,
+                        { chartHeight }
+                    )}
+                </div>
+            )}
         </div>
     )
 }
@@ -1356,14 +1478,15 @@ function DashboardBuilderInner({
 
     function addChart(chartId: string) {
         const entry = CHART_PALETTE.find(c => c.id === chartId); if (!entry) return
-        const w = isLayoutComponent(chartId) ? RGL_COLS : 6
-        const h = 4
+        const { w, h } = getDefaultSize(chartId)
         const y = canvasItems.reduce((max, item) => Math.max(max, item.y + item.h), 0)
+        const config = getDefaultConfig(chartId)
         const newItem: CanvasItem = {
             instanceId: newId(), chartId: entry.id, name: entry.name,
             description: entry.description, importStatement: entry.importStatement,
             dataType: entry.dataType,
             x: 0, y, w, h,
+            ...(config && { config }),
         }
         dispatch({ type: "ADD_ITEM", item: newItem })
     }
@@ -1389,12 +1512,14 @@ function DashboardBuilderInner({
         if (!chartId) return
         const entry = CHART_PALETTE.find(c => c.id === chartId)
         if (!entry) return
+        const config = getDefaultConfig(chartId)
         dispatch({ type: "ADD_ITEM", item: {
             instanceId: newId(), chartId, name: entry.name,
             description: entry.description, importStatement: entry.importStatement,
             dataType: entry.dataType,
             x: layoutItem.x, y: layoutItem.y,
             w: layoutItem.w, h: layoutItem.h,
+            ...(config && { config }),
         }})
         // Sync existing items' positions (compaction may have shifted them during drop)
         const positionUpdates = _layout
@@ -1775,6 +1900,7 @@ function DashboardBuilderInner({
                                                                 item={item}
                                                                 onRemove={() => removeItem(item.instanceId)}
                                                                 onLink={(instanceId, targetPageId) => dispatch({ type: "LINK_ITEM", instanceId, targetPageId })}
+                                                                onConfigChange={(instanceId, config) => dispatch({ type: "UPDATE_ITEM_CONFIG", instanceId, config })}
                                                                 pages={state.pages}
                                                             />
                                                         </div>

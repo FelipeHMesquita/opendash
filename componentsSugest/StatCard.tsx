@@ -1,6 +1,7 @@
 import * as React from "react"
 import { TrendingUp, TrendingDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import type { StatCardConfig } from "@/app/_builder-state"
 
 // ─── Primitive ────────────────────────────────────────────────────────────────
 
@@ -35,27 +36,30 @@ export function StatCard({ title, value, change, positive, description }: StatCa
     )
 }
 
-// ─── Page demo ────────────────────────────────────────────────────────────────
+// ─── Demo (single card, config-aware) ────────────────────────────────────────
 
-const cards = [
-    { title: "Receita Total",   value: "$48,295",  change: "+12.5%", positive: true,  description: "vs. mês anterior" },
-    { title: "Usuários Ativos", value: "3,842",    change: "+8.1%",  positive: true,  description: "nos últimos 30 dias" },
-    { title: "Taxa de Churn",   value: "2.4%",     change: "+0.3%",  positive: false, description: "aumento preocupante" },
-    { title: "MRR",             value: "$9,240",   change: "+5.2%",  positive: true,  description: "receita recorrente" },
-]
+type StatCardDemoProps = {
+    config?: StatCardConfig
+}
 
-export function StatCardDemo() {
+export function StatCardDemo({ config }: StatCardDemoProps = {}) {
+    const c = config ?? {
+        title: "Receita Total",
+        value: "$48,295",
+        change: "+12.5%",
+        positive: true,
+        description: "vs. mês anterior",
+    }
+
     return (
         <div className="w-full p-8">
-            <div className="mb-6">
-                <h2 className="text-lg/7 font-semibold text-foreground">Métricas principais</h2>
-                <p className="text-sm/6 text-muted-foreground">Últimos 30 dias</p>
-            </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-                {cards.map(card => (
-                    <StatCard key={card.title} {...card} />
-                ))}
-            </div>
+            <StatCard
+                title={c.title}
+                value={c.value}
+                change={c.change}
+                positive={c.positive}
+                description={c.description}
+            />
         </div>
     )
 }

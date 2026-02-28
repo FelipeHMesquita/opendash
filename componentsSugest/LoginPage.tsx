@@ -5,28 +5,38 @@ import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import type { LoginConfig } from "@/app/_builder-state"
 
-export function LoginPage() {
+type LoginPageProps = {
+    config?: LoginConfig
+}
+
+const defaults: LoginConfig = {
+    heading: "Entrar na sua conta",
+    subtext: "Não tem uma conta?",
+    subtextLink: "Criar conta",
+    emailLabel: "Email",
+    passwordLabel: "Senha",
+    forgotLabel: "Esqueci minha senha",
+    submitLabel: "Entrar",
+    googleLabel: "Continuar com Google",
+}
+
+export function LoginPage({ config }: LoginPageProps = {}) {
+    const c = { ...defaults, ...config }
     const [showPassword, setShowPassword] = React.useState(false)
 
     return (
-        <div className="flex h-full w-full items-center justify-center bg-background px-4">
-            <div className="w-full max-w-sm">
-
-                {/* Logo */}
-                <div className="mb-8 flex justify-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-                        <span className="text-sm font-bold text-primary-foreground">C</span>
-                    </div>
-                </div>
+        <div className="w-full p-8">
+            <div className="w-full max-w-sm mx-auto space-y-4">
 
                 {/* Heading */}
-                <div className="mb-8 text-center">
-                    <h1 className="text-xl font-semibold text-foreground">Entrar na sua conta</h1>
+                <div className="text-center">
+                    <h1 className="text-xl font-semibold text-foreground">{c.heading}</h1>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Não tem uma conta?{" "}
+                        {c.subtext}{" "}
                         <Button variant="link" className="h-auto p-0 text-sm font-medium">
-                            Criar conta
+                            {c.subtextLink}
                         </Button>
                     </p>
                 </div>
@@ -34,7 +44,7 @@ export function LoginPage() {
                 {/* Form */}
                 <div className="space-y-4">
                     <div className="space-y-1.5">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email">{c.emailLabel}</Label>
                         <Input
                             id="email"
                             type="email"
@@ -44,9 +54,9 @@ export function LoginPage() {
 
                     <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="password">Senha</Label>
+                            <Label htmlFor="password">{c.passwordLabel}</Label>
                             <Button variant="link" className="h-auto p-0 text-xs text-muted-foreground">
-                                Esqueci minha senha
+                                {c.forgotLabel}
                             </Button>
                         </div>
                         <div className="relative">
@@ -69,7 +79,7 @@ export function LoginPage() {
                     </div>
 
                     <Button className="w-full">
-                        Entrar
+                        {c.submitLabel}
                     </Button>
 
                     <div className="relative flex items-center gap-3">
@@ -79,7 +89,7 @@ export function LoginPage() {
                     </div>
 
                     <Button variant="outline" className="w-full">
-                        Continuar com Google
+                        {c.googleLabel}
                     </Button>
                 </div>
 

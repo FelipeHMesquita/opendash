@@ -5,6 +5,11 @@ import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import type { SignUpConfig } from "@/app/_builder-state"
+
+type SignUpPageProps = {
+    config?: SignUpConfig
+}
 
 // ─── Password strength ────────────────────────────────────────────────────────
 
@@ -22,9 +27,26 @@ function getStrength(password: string): { score: number; label: string; color: s
     return              { score: 5, label: "Forte",  color: "bg-success" }
 }
 
+// ─── Defaults ─────────────────────────────────────────────────────────────────
+
+const defaults: SignUpConfig = {
+    heading: "Criar sua conta",
+    subtext: "Já tem uma conta?",
+    subtextLink: "Entrar",
+    nameLabel: "Nome completo",
+    emailLabel: "Email",
+    passwordLabel: "Senha",
+    termsText: "Concordo com os",
+    termsLink: "Termos de uso",
+    privacyLink: "Política de privacidade",
+    submitLabel: "Criar conta",
+    googleLabel: "Continuar com Google",
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function SignUpPage() {
+export function SignUpPage({ config }: SignUpPageProps = {}) {
+    const c = { ...defaults, ...config }
     const [showPassword, setShowPassword] = React.useState(false)
     const [password, setPassword] = React.useState("")
     const [agreed, setAgreed] = React.useState(false)
@@ -32,23 +54,16 @@ export function SignUpPage() {
     const strength = getStrength(password)
 
     return (
-        <div className="flex h-full w-full items-center justify-center bg-background px-4">
-            <div className="w-full max-w-sm">
-
-                {/* Logo */}
-                <div className="mb-8 flex justify-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-                        <span className="text-sm font-bold text-primary-foreground">C</span>
-                    </div>
-                </div>
+        <div className="w-full p-8">
+            <div className="w-full max-w-sm mx-auto space-y-4">
 
                 {/* Heading */}
-                <div className="mb-8 text-center">
-                    <h1 className="text-xl font-semibold text-foreground">Criar sua conta</h1>
+                <div className="text-center">
+                    <h1 className="text-xl font-semibold text-foreground">{c.heading}</h1>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Já tem uma conta?{" "}
+                        {c.subtext}{" "}
                         <Button variant="link" className="h-auto p-0 text-sm font-medium">
-                            Entrar
+                            {c.subtextLink}
                         </Button>
                     </p>
                 </div>
@@ -58,7 +73,7 @@ export function SignUpPage() {
 
                     {/* Name */}
                     <div className="space-y-1.5">
-                        <Label htmlFor="name">Nome completo</Label>
+                        <Label htmlFor="name">{c.nameLabel}</Label>
                         <Input
                             id="name"
                             type="text"
@@ -68,7 +83,7 @@ export function SignUpPage() {
 
                     {/* Email */}
                     <div className="space-y-1.5">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email">{c.emailLabel}</Label>
                         <Input
                             id="email"
                             type="email"
@@ -78,7 +93,7 @@ export function SignUpPage() {
 
                     {/* Password + strength */}
                     <div className="space-y-1.5">
-                        <Label htmlFor="password">Senha</Label>
+                        <Label htmlFor="password">{c.passwordLabel}</Label>
                         <div className="relative">
                             <Input
                                 id="password"
@@ -129,20 +144,20 @@ export function SignUpPage() {
                             className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary"
                         />
                         <Label htmlFor="terms" className="text-xs font-normal leading-relaxed text-muted-foreground cursor-pointer">
-                            Concordo com os{" "}
+                            {c.termsText}{" "}
                             <Button variant="link" className="h-auto p-0 text-xs font-medium">
-                                Termos de uso
+                                {c.termsLink}
                             </Button>{" "}
                             e a{" "}
                             <Button variant="link" className="h-auto p-0 text-xs font-medium">
-                                Política de privacidade
+                                {c.privacyLink}
                             </Button>
                         </Label>
                     </div>
 
                     {/* Submit */}
                     <Button className="w-full" disabled={!agreed}>
-                        Criar conta
+                        {c.submitLabel}
                     </Button>
 
                     <div className="relative flex items-center gap-3">
@@ -152,7 +167,7 @@ export function SignUpPage() {
                     </div>
 
                     <Button variant="outline" className="w-full">
-                        Continuar com Google
+                        {c.googleLabel}
                     </Button>
                 </div>
 

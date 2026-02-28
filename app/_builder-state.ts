@@ -145,6 +145,7 @@ export const PALETTE_SECTIONS: { title: string; items: PaletteEntry[] }[] = [
             { id: "switch-card",         name: "Switch",           description: "Switches on/off de preferências",         importStatement: 'import { SwitchCard } from "@/componentsSugest/shadcn/SwitchCard"',               dataType: "Componente (sem data props)" },
             { id: "input-otp-card",      name: "Input OTP",        description: "Campo de código de verificação",          importStatement: 'import { InputOtpCard } from "@/componentsSugest/shadcn/InputOtpCard"',           dataType: "Componente (sem data props)" },
             { id: "textarea-card",       name: "Textarea",         description: "Área de texto com envio",                 importStatement: 'import { TextareaCard } from "@/componentsSugest/shadcn/TextareaCard"',           dataType: "Componente (sem data props)" },
+            { id: "theme-toggle",        name: "Theme Toggle",     description: "Toggle dark/light mode",                  importStatement: '// Theme Toggle (built-in)',                                                       dataType: "Componente configurável" },
         ],
     },
     {
@@ -169,6 +170,26 @@ export const PALETTE_SECTIONS: { title: string; items: PaletteEntry[] }[] = [
             { id: "collapsible-demo",     name: "Collapsible",      description: "Blocos de conteúdo retráteis",           importStatement: 'import { CollapsibleDemo } from "@/componentsSugest/shadcn/AccordionDemo"',       dataType: "Componente (sem data props)" },
             { id: "carousel-demo",        name: "Carousel",         description: "Navegação horizontal entre cards",       importStatement: 'import { CarouselDemo } from "@/componentsSugest/shadcn/CarouselDemo"',           dataType: "Componente (sem data props)" },
             { id: "resizable-demo",       name: "Resizable",        description: "Painéis redimensionáveis e scroll area", importStatement: 'import { ResizableDemo } from "@/componentsSugest/shadcn/ResizableDemo"',         dataType: "Componente (sem data props)" },
+        ],
+    },
+    {
+        title: "Botões",
+        items: [
+            { id: "button-single", name: "Botão", description: "Botão com variantes semânticas", importStatement: '// Button (built-in)', dataType: "Componente configurável" },
+        ],
+    },
+    {
+        title: "Usuários",
+        items: [
+            { id: "avatar-single", name: "Avatar", description: "Avatar com nome e cargo", importStatement: '// Avatar (built-in)', dataType: "Componente configurável" },
+        ],
+    },
+    {
+        title: "Formas",
+        items: [
+            { id: "shape", name: "Shape", description: "Forma com ícone configurável", importStatement: '// Shape (built-in)', dataType: "Componente configurável" },
+            { id: "card-shape", name: "Card Shape", description: "Card com ícone, título e descrição", importStatement: '// Card Shape (built-in)', dataType: "Componente configurável" },
+            { id: "container", name: "Container", description: "Container visual para agrupamento", importStatement: '// Container (built-in)', dataType: "Componente configurável" },
         ],
     },
 ]
@@ -206,6 +227,289 @@ export interface NavItem {
     targetPageId: PageId | null
 }
 
+// ─── Shape config ────────────────────────────────────────────────────────────
+
+export type ShapeConfig = {
+    icon: string
+    alignH: "start" | "center" | "end"
+    alignV: "start" | "center" | "end"
+    paddingTop: number
+    paddingRight: number
+    paddingBottom: number
+    paddingLeft: number
+    paddingLinked: boolean
+    bgColor: string
+    borderRadius: number
+    showBorder: boolean
+}
+
+// ─── Card Shape config ───────────────────────────────────────────────────────
+
+export type CardShapeConfig = {
+    icon: string
+    title: string
+    description: string
+}
+
+// ─── Login config ────────────────────────────────────────────────────────────
+
+export type LoginConfig = {
+    heading: string
+    subtext: string
+    subtextLink: string
+    emailLabel: string
+    passwordLabel: string
+    forgotLabel: string
+    submitLabel: string
+    googleLabel: string
+    submitLinkPageId?: string | null
+    googleLinkPageId?: string | null
+    subtextLinkPageId?: string | null
+    forgotLinkPageId?: string | null
+}
+
+// ─── SignUp config ───────────────────────────────────────────────────────────
+
+export type SignUpConfig = {
+    heading: string
+    subtext: string
+    subtextLink: string
+    nameLabel: string
+    emailLabel: string
+    passwordLabel: string
+    termsText: string
+    termsLink: string
+    privacyLink: string
+    submitLabel: string
+    googleLabel: string
+    submitLinkPageId?: string | null
+    googleLinkPageId?: string | null
+    subtextLinkPageId?: string | null
+}
+
+// ─── StatCard config ─────────────────────────────────────────────────────────
+
+export type StatCardConfig = {
+    title: string
+    value: string
+    change: string
+    positive: boolean
+    description: string
+}
+
+// ─── Kanban config ───────────────────────────────────────────────────────────
+
+export type KanbanColumn = { id: string; title: string; color: string }
+
+export type KanbanConfig = {
+    columns: KanbanColumn[]
+}
+
+// ─── Container config ────────────────────────────────────────────────────────
+
+export type ContainerConfig = {
+    title: string
+    bgColor: string
+    showBorder: boolean
+    borderRadius: number
+    showTitle: boolean
+    titleAlign: "start" | "center"
+}
+
+// ─── Button config ───────────────────────────────────────────────────────────
+
+export type ButtonConfig = {
+    label: string
+    variant: "default" | "destructive" | "outline" | "secondary" | "ghost"
+    size: "default" | "sm" | "lg"
+    linkPageId?: string | null
+}
+
+// ─── Avatar config ───────────────────────────────────────────────────────────
+
+export type AvatarConfig = {
+    name: string
+    role: string
+    size: "sm" | "default" | "lg"
+    showName: boolean
+    showRole: boolean
+}
+
+// ─── ThemeToggle config ──────────────────────────────────────────────────────
+
+export type ThemeToggleConfig = {
+    size: "sm" | "default" | "lg"
+}
+
+// ─── ItemConfig union ────────────────────────────────────────────────────────
+
+export type ItemConfig =
+    | ShapeConfig
+    | CardShapeConfig
+    | LoginConfig
+    | SignUpConfig
+    | StatCardConfig
+    | KanbanConfig
+    | ContainerConfig
+    | ButtonConfig
+    | AvatarConfig
+    | ThemeToggleConfig
+
+// ─── Defaults ────────────────────────────────────────────────────────────────
+
+export const DEFAULT_SHAPE_CONFIG: ShapeConfig = {
+    icon: "square", alignH: "center", alignV: "center",
+    paddingTop: 12, paddingRight: 12, paddingBottom: 12, paddingLeft: 12,
+    paddingLinked: true,
+    bgColor: "primary", borderRadius: 8, showBorder: false,
+}
+
+export const DEFAULT_CARD_SHAPE_CONFIG: CardShapeConfig = {
+    icon: "layoutGrid",
+    title: "Novo Projeto",
+    description: "Descrição do projeto",
+}
+
+export const DEFAULT_LOGIN_CONFIG: LoginConfig = {
+    heading: "Entrar na sua conta",
+    subtext: "Não tem uma conta?",
+    subtextLink: "Criar conta",
+    emailLabel: "Email",
+    passwordLabel: "Senha",
+    forgotLabel: "Esqueci minha senha",
+    submitLabel: "Entrar",
+    googleLabel: "Continuar com Google",
+}
+
+export const DEFAULT_SIGNUP_CONFIG: SignUpConfig = {
+    heading: "Criar sua conta",
+    subtext: "Já tem uma conta?",
+    subtextLink: "Entrar",
+    nameLabel: "Nome completo",
+    emailLabel: "Email",
+    passwordLabel: "Senha",
+    termsText: "Concordo com os",
+    termsLink: "Termos de uso",
+    privacyLink: "Política de privacidade",
+    submitLabel: "Criar conta",
+    googleLabel: "Continuar com Google",
+}
+
+export const DEFAULT_STAT_CARD_CONFIG: StatCardConfig = {
+    title: "Receita Total",
+    value: "$48,295",
+    change: "+12.5%",
+    positive: true,
+    description: "vs. mês anterior",
+}
+
+export const DEFAULT_KANBAN_CONFIG: KanbanConfig = {
+    columns: [
+        { id: "col-1", title: "A fazer", color: "muted" },
+        { id: "col-2", title: "Em progresso", color: "info" },
+        { id: "col-3", title: "Concluído", color: "success" },
+    ],
+}
+
+export const DEFAULT_CONTAINER_CONFIG: ContainerConfig = {
+    title: "Container",
+    bgColor: "muted",
+    showBorder: true,
+    borderRadius: 8,
+    showTitle: true,
+    titleAlign: "start",
+}
+
+export const DEFAULT_BUTTON_CONFIG: ButtonConfig = {
+    label: "Botão",
+    variant: "default",
+    size: "default",
+}
+
+export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
+    name: "João Silva",
+    role: "Designer",
+    size: "default",
+    showName: true,
+    showRole: true,
+}
+
+export const DEFAULT_THEME_TOGGLE_CONFIG: ThemeToggleConfig = {
+    size: "default",
+}
+
+// ─── Item type helpers ───────────────────────────────────────────────────────
+
+export const SHAPE_IDS = new Set(["shape"])
+export function isShapeItem(chartId: string) { return SHAPE_IDS.has(chartId) }
+
+export const CARD_SHAPE_IDS = new Set(["card-shape"])
+export function isCardShapeItem(chartId: string) { return CARD_SHAPE_IDS.has(chartId) }
+
+export const LOGIN_IDS = new Set(["login-page"])
+export function isLoginItem(chartId: string) { return LOGIN_IDS.has(chartId) }
+
+export const SIGNUP_IDS = new Set(["signup-page"])
+export function isSignUpItem(chartId: string) { return SIGNUP_IDS.has(chartId) }
+
+export const STAT_CARD_IDS = new Set(["stat-cards"])
+export function isStatCardItem(chartId: string) { return STAT_CARD_IDS.has(chartId) }
+
+export const KANBAN_IDS = new Set(["kanban-board"])
+export function isKanbanItem(chartId: string) { return KANBAN_IDS.has(chartId) }
+
+export const CONTAINER_IDS = new Set(["container"])
+export function isContainerItem(chartId: string) { return CONTAINER_IDS.has(chartId) }
+
+export const BUTTON_IDS = new Set(["button-single"])
+export function isButtonItem(chartId: string) { return BUTTON_IDS.has(chartId) }
+
+export const AVATAR_IDS = new Set(["avatar-single"])
+export function isAvatarItem(chartId: string) { return AVATAR_IDS.has(chartId) }
+
+export const THEME_TOGGLE_IDS = new Set(["theme-toggle"])
+export function isThemeToggleItem(chartId: string) { return THEME_TOGGLE_IDS.has(chartId) }
+
+/** True if the item has a per-item config popover */
+export function isConfigurableItem(chartId: string): boolean {
+    return isShapeItem(chartId) || isCardShapeItem(chartId) ||
+        isLoginItem(chartId) || isSignUpItem(chartId) ||
+        isStatCardItem(chartId) || isKanbanItem(chartId) ||
+        isContainerItem(chartId) || isButtonItem(chartId) ||
+        isAvatarItem(chartId) || isThemeToggleItem(chartId)
+}
+
+/** Returns the default config for a configurable item, or undefined */
+export function getDefaultConfig(chartId: string): ItemConfig | undefined {
+    if (isShapeItem(chartId)) return { ...DEFAULT_SHAPE_CONFIG }
+    if (isCardShapeItem(chartId)) return { ...DEFAULT_CARD_SHAPE_CONFIG }
+    if (isLoginItem(chartId)) return { ...DEFAULT_LOGIN_CONFIG }
+    if (isSignUpItem(chartId)) return { ...DEFAULT_SIGNUP_CONFIG }
+    if (isStatCardItem(chartId)) return { ...DEFAULT_STAT_CARD_CONFIG }
+    if (isKanbanItem(chartId)) return { ...DEFAULT_KANBAN_CONFIG }
+    if (isContainerItem(chartId)) return { ...DEFAULT_CONTAINER_CONFIG }
+    if (isButtonItem(chartId)) return { ...DEFAULT_BUTTON_CONFIG }
+    if (isAvatarItem(chartId)) return { ...DEFAULT_AVATAR_CONFIG }
+    if (isThemeToggleItem(chartId)) return { ...DEFAULT_THEME_TOGGLE_CONFIG }
+    return undefined
+}
+
+/** Items that skip the card-inner wrapper (own background) */
+export function skipCardInner(chartId: string): boolean {
+    return isShapeItem(chartId) || isContainerItem(chartId) ||
+        isButtonItem(chartId) || isAvatarItem(chartId) || isThemeToggleItem(chartId)
+}
+
+/** Default grid size for a given chart type */
+export function getDefaultSize(chartId: string): { w: number; h: number } {
+    if (isShapeItem(chartId)) return { w: 2, h: 2 }
+    if (isContainerItem(chartId)) return { w: 12, h: 6 }
+    if (isKanbanItem(chartId)) return { w: 24, h: 6 }
+    if (isButtonItem(chartId) || isAvatarItem(chartId) || isThemeToggleItem(chartId)) return { w: 4, h: 2 }
+    if (isLayoutComponent(chartId)) return { w: RGL_COLS, h: 4 }
+    return { w: 6, h: 4 }
+}
+
 // ─── Canvas item ──────────────────────────────────────────────────────────────
 
 export type CanvasItem = {
@@ -216,6 +520,7 @@ export type CanvasItem = {
     w: number         // width in columns
     h: number         // height in row units
     targetPageId?: PageId | null  // link to another page (navigation on click)
+    config?: ItemConfig            // per-item configuration (shapes, etc.)
 }
 
 // ─── Page & Navigation types ──────────────────────────────────────────────────
@@ -411,8 +716,9 @@ export type BuilderAction =
     | { type: "REMOVE_ITEM"; instanceId: string }
     | { type: "SET_ITEMS"; items: CanvasItem[] }
     | { type: "UPDATE_LAYOUT"; layout: Array<{ i: string; x: number; y: number; w: number; h: number }> }
-    // Canvas item link
+    // Canvas item link & config
     | { type: "LINK_ITEM"; instanceId: string; targetPageId: PageId | null }
+    | { type: "UPDATE_ITEM_CONFIG"; instanceId: string; config: Partial<ItemConfig> }
     // Nav items (pageId → edit page.layout; omit → edit global)
     | { type: "ADD_NAV_ITEM"; target: NavTarget; item: NavItem; pageId?: PageId }
     | { type: "REMOVE_NAV_ITEM"; target: NavTarget; itemId: string; pageId?: PageId }
@@ -536,13 +842,22 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
                 return changed ? { ...page, canvasItems: next } : page
             })
 
-        // ── Canvas item link ────────────────────────────────────────────────
+        // ── Canvas item link & config ─────────────────────────────────────
         case "LINK_ITEM":
             return updateActivePage(state, page => ({
                 ...page,
                 canvasItems: page.canvasItems.map(i =>
                     i.instanceId === action.instanceId
                         ? { ...i, targetPageId: action.targetPageId || null }
+                        : i
+                ),
+            }))
+        case "UPDATE_ITEM_CONFIG":
+            return updateActivePage(state, page => ({
+                ...page,
+                canvasItems: page.canvasItems.map(i =>
+                    i.instanceId === action.instanceId
+                        ? { ...i, config: { ...i.config, ...action.config } as ItemConfig }
                         : i
                 ),
             }))

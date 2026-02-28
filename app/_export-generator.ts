@@ -1,7 +1,14 @@
 // ─── Comprehensive export generator ──────────────────────────────────────────
 // Generates a complete design specification in Markdown format (8 sections).
 
-import { type Page, type NavItem, buildTree, DEVICE_PRESETS, RGL_COLS, RGL_ROW_HEIGHT, RGL_MARGIN } from "./_builder-state"
+import {
+    type Page, type NavItem, buildTree, DEVICE_PRESETS, RGL_COLS, RGL_ROW_HEIGHT, RGL_MARGIN,
+    isShapeItem, type ShapeConfig, isCardShapeItem, type CardShapeConfig,
+    isLoginItem, type LoginConfig, isSignUpItem, type SignUpConfig,
+    isStatCardItem, type StatCardConfig, isKanbanItem, type KanbanConfig,
+    isContainerItem, type ContainerConfig, isButtonItem, type ButtonConfig,
+    isAvatarItem, type AvatarConfig, isThemeToggleItem,
+} from "./_builder-state"
 import { themes, type ThemeName, ALL_THEMES } from "./styleguide/_themes"
 import {
     TYPOGRAPHY_TOKENS, SPACING_SCALE, RADIUS_TOKENS, SHADOW_TOKENS,
@@ -229,6 +236,124 @@ function generateComponentsSection(params: ExportParams): string {
         page.canvasItems.forEach((item, i) => {
             const heightPx = item.h * RGL_ROW_HEIGHT + (item.h - 1) * RGL_MARGIN[1]
             lines.push("", `#### ${i + 1}. ${item.name}`)
+
+            if (isShapeItem(item.chartId)) {
+                const cfg = item.config as ShapeConfig | undefined
+                lines.push(`- Tipo: **Shape** (forma com ícone)`)
+                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
+                if (cfg) {
+                    lines.push(`- Ícone: ${cfg.icon}`)
+                    lines.push(`- Alinhamento: ${cfg.alignV}/${cfg.alignH}`)
+                    lines.push(`- Fundo: ${cfg.bgColor}${cfg.showBorder ? " + borda" : ""}`)
+                    lines.push(`- Border-radius: ${cfg.borderRadius}px`)
+                    lines.push(`- Padding: ${cfg.paddingLinked ? `${cfg.paddingTop}px` : `${cfg.paddingTop}/${cfg.paddingRight}/${cfg.paddingBottom}/${cfg.paddingLeft}px`}`)
+                }
+                return
+            }
+
+            if (isCardShapeItem(item.chartId)) {
+                const cfg = item.config as CardShapeConfig | undefined
+                lines.push(`- Tipo: **Card Shape** (card com ícone + título + descrição)`)
+                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
+                if (cfg) {
+                    lines.push(`- Ícone: ${cfg.icon}`)
+                    lines.push(`- Título: "${cfg.title}"`)
+                    lines.push(`- Descrição: "${cfg.description}"`)
+                }
+                lines.push(`- Cores: tokens semânticos (bg-card, text-foreground, bg-primary/10)`)
+                return
+            }
+
+            if (isLoginItem(item.chartId)) {
+                const cfg = item.config as LoginConfig | undefined
+                lines.push(`- Tipo: **Login** (formulário de autenticação)`)
+                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
+                if (cfg) {
+                    lines.push(`- Título: "${cfg.heading}"`)
+                    lines.push(`- Botão principal: "${cfg.submitLabel}"`)
+                    lines.push(`- Botão Google: "${cfg.googleLabel}"`)
+                }
+                return
+            }
+
+            if (isSignUpItem(item.chartId)) {
+                const cfg = item.config as SignUpConfig | undefined
+                lines.push(`- Tipo: **Sign Up** (formulário de cadastro)`)
+                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
+                if (cfg) {
+                    lines.push(`- Título: "${cfg.heading}"`)
+                    lines.push(`- Botão principal: "${cfg.submitLabel}"`)
+                    lines.push(`- Botão Google: "${cfg.googleLabel}"`)
+                }
+                return
+            }
+
+            if (isStatCardItem(item.chartId)) {
+                const cfg = item.config as StatCardConfig | undefined
+                lines.push(`- Tipo: **Stat Card** (métrica individual)`)
+                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
+                if (cfg) {
+                    lines.push(`- Título: "${cfg.title}"`)
+                    lines.push(`- Valor: "${cfg.value}"`)
+                    lines.push(`- Variação: "${cfg.change}" (${cfg.positive ? "positivo" : "negativo"})`)
+                    lines.push(`- Descrição: "${cfg.description}"`)
+                }
+                return
+            }
+
+            if (isKanbanItem(item.chartId)) {
+                const cfg = item.config as KanbanConfig | undefined
+                lines.push(`- Tipo: **Kanban Board** (quadro de tarefas)`)
+                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
+                if (cfg) {
+                    lines.push(`- Colunas: ${cfg.columns.map(c => `"${c.title}" (${c.color})`).join(", ")}`)
+                }
+                return
+            }
+
+            if (isContainerItem(item.chartId)) {
+                const cfg = item.config as ContainerConfig | undefined
+                lines.push(`- Tipo: **Container** (agrupamento visual)`)
+                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
+                if (cfg) {
+                    lines.push(`- Título: "${cfg.title}" (${cfg.showTitle ? "visível" : "oculto"})`)
+                    lines.push(`- Fundo: ${cfg.bgColor}${cfg.showBorder ? " + borda" : ""}`)
+                    lines.push(`- Border-radius: ${cfg.borderRadius}px`)
+                }
+                return
+            }
+
+            if (isButtonItem(item.chartId)) {
+                const cfg = item.config as ButtonConfig | undefined
+                lines.push(`- Tipo: **Botão** (componente de ação)`)
+                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
+                if (cfg) {
+                    lines.push(`- Texto: "${cfg.label}"`)
+                    lines.push(`- Variante: ${cfg.variant}`)
+                    lines.push(`- Tamanho: ${cfg.size}`)
+                }
+                return
+            }
+
+            if (isAvatarItem(item.chartId)) {
+                const cfg = item.config as AvatarConfig | undefined
+                lines.push(`- Tipo: **Avatar** (perfil de usuário)`)
+                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
+                if (cfg) {
+                    lines.push(`- Nome: "${cfg.name}"`)
+                    lines.push(`- Cargo: "${cfg.role}"`)
+                    lines.push(`- Tamanho: ${cfg.size}`)
+                    lines.push(`- Exibir: nome=${cfg.showName}, cargo=${cfg.showRole}`)
+                }
+                return
+            }
+
+            if (isThemeToggleItem(item.chartId)) {
+                lines.push(`- Tipo: **Theme Toggle** (alternância dark/light)`)
+                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
+                return
+            }
+
             lines.push(`- Import: \`${item.importStatement}\``)
             lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (${item.w}/${RGL_COLS} colunas, ~${heightPx}px)`)
             lines.push(`- Schema: \`${item.dataType}\``)
