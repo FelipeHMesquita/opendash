@@ -9,7 +9,7 @@ import {
 } from "@dnd-kit/core"
 import { SortableContext, useSortable, horizontalListSortingStrategy, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import ReactGridLayout, { verticalCompactor, noCompactor, type LayoutItem, type Layout as RGLLayout } from "react-grid-layout"
+import ReactGridLayout, { verticalCompactor, noCompactor, cloneLayoutItem, type LayoutItem, type Layout as RGLLayout } from "react-grid-layout"
 import { cn } from "@/lib/utils"
 import { useParams } from "next/navigation"
 import { useData } from "@/app/_data-context"
@@ -1242,18 +1242,25 @@ function DashboardBuilderInner({
         })
     }, [state, activeTheme, showNavbar, showSidebar, mockSidebarOpen, mockSidebarWidth, showRightSidebar, mockRightSidebarOpen, mockRightSidebarWidth, gridOpacity, padV, padH, deviceId, useCompactor, contentMinHeight, onSave])
 
-    // Container width for RGL
+    // Container width for RGL — shared between editor and preview via callback ref
     const contentRef = React.useRef<HTMLDivElement>(null)
+    const roRef = React.useRef<ResizeObserver | null>(null)
     const [containerWidth, setContainerWidth] = React.useState(900)
-    React.useEffect(() => {
-        const el = contentRef.current; if (!el) return
-        const ro = new ResizeObserver(([e]) => setContainerWidth(e.contentRect.width))
-        ro.observe(el); return () => ro.disconnect()
+    const setContentRef = React.useCallback((el: HTMLDivElement | null) => {
+        if (roRef.current) roRef.current.disconnect()
+        contentRef.current = el
+        if (el) {
+            roRef.current = new ResizeObserver(([e]) => setContainerWidth(e.contentRect.width))
+            roRef.current.observe(el)
+        }
     }, [])
+    React.useEffect(() => () => { roRef.current?.disconnect() }, [])
 
     // RGL layout array (derived from canvasItems)
+    // cloneLayoutItem produces 16-field items matching RGL's internal structure,
+    // so fast-equals deepEqual comparison inside RGL returns true when values match.
     const rglLayout: RGLLayout = React.useMemo(
-        () => canvasItems.map(item => ({ i: item.instanceId, x: item.x, y: item.y, w: item.w, h: item.h })),
+        () => canvasItems.map(item => cloneLayoutItem({ i: item.instanceId, x: item.x, y: item.y, w: item.w, h: item.h })),
         [canvasItems],
     )
 
@@ -1262,6 +1269,40 @@ function DashboardBuilderInner({
         () => ({ i: "__dropping__", x: 0, y: 0, w: _pendingDrop?.w ?? 6, h: _pendingDrop?.h ?? 4 }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [_pendingDrop?.w, _pendingDrop?.h],
+    )
+
+    // ─── Memoized RGL config objects (prevents infinite useEffect loop) ──────
+    const rglGridConfig = React.useMemo(
+        () => ({ cols: RGL_COLS, rowHeight: RGL_ROW_HEIGHT, margin: RGL_MARGIN, containerPadding: [activeLayout.padH, activeLayout.padV] as [number, number], maxRows: Infinity }),
+        [activeLayout.padH, activeLayout.padV],
+    )
+    const rglDragConfig = React.useMemo(
+        () => ({ enabled: true, bounded: false, handle: ".card-drag-handle", threshold: 3 }),
+        [],
+    )
+    const rglDragDisabled = React.useMemo(
+        () => ({ enabled: false, bounded: false, threshold: 3 }),
+        [],
+    )
+    const rglResizeConfig = React.useMemo(
+        () => ({ enabled: true, handles: ["se"] as const }),
+        [],
+    )
+    const rglResizeDisabled = React.useMemo(
+        () => ({ enabled: false, handles: ["se"] as const }),
+        [],
+    )
+    const rglDropConfig = React.useMemo(
+        () => ({ enabled: true, defaultItem: { w: droppingItem.w, h: droppingItem.h } }),
+        [droppingItem.w, droppingItem.h],
+    )
+    const rglCompactor = React.useMemo(
+        () => useCompactor ? verticalCompactor : noCompactor,
+        [useCompactor],
+    )
+    const rglMinHeightStyle = React.useMemo(
+        () => contentMinHeight > 0 ? { minHeight: contentMinHeight } : undefined,
+        [contentMinHeight],
     )
 
     // Theme vars applied as inline styles on the device frame (not on root)
@@ -1283,22 +1324,32 @@ function DashboardBuilderInner({
         const entry = CHART_PALETTE.find(c => c.id === chartId); if (!entry) return
         const w = isLayoutComponent(chartId) ? RGL_COLS : 6
         const h = 4
+        const y = canvasItems.reduce((max, item) => Math.max(max, item.y + item.h), 0)
         const newItem: CanvasItem = {
             instanceId: newId(), chartId: entry.id, name: entry.name,
             description: entry.description, importStatement: entry.importStatement,
             dataType: entry.dataType,
-            x: 0, y: Infinity, w, h,
+            x: 0, y, w, h,
         }
         dispatch({ type: "ADD_ITEM", item: newItem })
     }
 
     function removeItem(instanceId: string) { dispatch({ type: "REMOVE_ITEM", instanceId }) }
 
-    function handleLayoutChange(layout: RGLLayout) {
-        dispatch({ type: "UPDATE_LAYOUT", layout: layout.map(l => ({ i: l.i, x: l.x, y: l.y, w: l.w, h: l.h })) })
-    }
+    // Terminal events: sync layout only when user interaction ends (not on every internal RGL state change).
+    // This breaks the feedback loop that caused "Maximum update depth exceeded".
+    const handleDragStop = React.useCallback(
+        (layout: RGLLayout) => {
+            dispatch({ type: "UPDATE_LAYOUT", layout: layout.map(l => ({ i: l.i, x: l.x, y: l.y, w: l.w, h: l.h })) })
+        }, [],
+    )
+    const handleResizeStop = React.useCallback(
+        (layout: RGLLayout) => {
+            dispatch({ type: "UPDATE_LAYOUT", layout: layout.map(l => ({ i: l.i, x: l.x, y: l.y, w: l.w, h: l.h })) })
+        }, [],
+    )
 
-    function handleDrop(_layout: RGLLayout, layoutItem: LayoutItem | undefined, e: Event) {
+    const handleDrop = React.useCallback((_layout: RGLLayout, layoutItem: LayoutItem | undefined, e: Event) => {
         if (!layoutItem) return
         const chartId = (e as DragEvent).dataTransfer?.getData("text/plain")
         if (!chartId) return
@@ -1311,13 +1362,20 @@ function DashboardBuilderInner({
             x: layoutItem.x, y: layoutItem.y,
             w: layoutItem.w, h: layoutItem.h,
         }})
+        // Sync existing items' positions (compaction may have shifted them during drop)
+        const positionUpdates = _layout
+            .filter(l => l.i !== "__dropping-elem__" && l.i !== "__dropping__")
+            .map(l => ({ i: l.i, x: l.x, y: l.y, w: l.w, h: l.h }))
+        if (positionUpdates.length > 0) {
+            dispatch({ type: "UPDATE_LAYOUT", layout: positionUpdates })
+        }
         _pendingDrop = null
-    }
+    }, [])
 
-    function handleDropDragOver(_e: React.DragEvent) {
+    const handleDropDragOver = React.useCallback((_e: React.DragEvent) => {
         if (!_pendingDrop) return undefined
         return { w: _pendingDrop.w, h: _pendingDrop.h }
-    }
+    }, [])
 
     function handleExport() {
         const exportParams: ExportParams = {
@@ -1419,15 +1477,15 @@ function DashboardBuilderInner({
                     )}
 
                     {/* Content */}
-                    <div className={cn("flex-1 overflow-y-auto bg-background", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")}>
+                    <div ref={setContentRef} className={cn("flex-1 overflow-y-auto bg-background", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")}>
                         <ReactGridLayout
                             width={containerWidth}
                             layout={rglLayout}
-                            gridConfig={{ cols: RGL_COLS, rowHeight: RGL_ROW_HEIGHT, margin: RGL_MARGIN, containerPadding: [activeLayout.padH, activeLayout.padV], maxRows: Infinity }}
-                            dragConfig={{ enabled: false, bounded: false, threshold: 3 }}
-                            resizeConfig={{ enabled: false, handles: ["se"] }}
-                            compactor={useCompactor ? verticalCompactor : noCompactor}
-                            style={contentMinHeight > 0 ? { minHeight: contentMinHeight } : undefined}
+                            gridConfig={rglGridConfig}
+                            dragConfig={rglDragDisabled}
+                            resizeConfig={rglResizeDisabled}
+                            compactor={rglCompactor}
+                            style={rglMinHeightStyle}
                         >
                             {canvasItems.map(item => (
                                 <div key={item.instanceId} className="h-full">
@@ -1654,7 +1712,7 @@ function DashboardBuilderInner({
                                                 onReorderItem={(activeId, overId) => dispatch({ type: "REORDER_NAV_ITEM", target: "sidebar", activeId, overId, pageId: navEditPageId("sidebarItems") })}
                                             />
                                         )}
-                                        <div ref={contentRef} className={cn("flex-1 min-w-0 overflow-y-auto", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")} style={gridBg}>
+                                        <div ref={setContentRef} className={cn("flex-1 min-w-0 overflow-y-auto", "[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[var(--border)]")} style={gridBg}>
                                             {canvasItems.length === 0 ? (
                                                 <div className="flex flex-col flex-1 min-h-96" style={{ paddingTop: activeLayout.padV, paddingBottom: activeLayout.padV, paddingLeft: activeLayout.padH, paddingRight: activeLayout.padH }}>
                                                     <div className="flex flex-col items-center justify-center flex-1 w-full rounded-lg border-[3px] border-dashed border-border/50">
@@ -1667,14 +1725,15 @@ function DashboardBuilderInner({
                                                 <ReactGridLayout
                                                     width={containerWidth}
                                                     layout={rglLayout}
-                                                    gridConfig={{ cols: RGL_COLS, rowHeight: RGL_ROW_HEIGHT, margin: RGL_MARGIN, containerPadding: [activeLayout.padH, activeLayout.padV], maxRows: Infinity }}
-                                                    dragConfig={{ enabled: true, bounded: false, handle: ".card-drag-handle", threshold: 3 }}
-                                                    resizeConfig={{ enabled: true, handles: ["se"] }}
-                                                    dropConfig={{ enabled: true, defaultItem: { w: droppingItem.w, h: droppingItem.h } }}
+                                                    gridConfig={rglGridConfig}
+                                                    dragConfig={rglDragConfig}
+                                                    resizeConfig={rglResizeConfig}
+                                                    dropConfig={rglDropConfig}
                                                     droppingItem={droppingItem}
-                                                    compactor={useCompactor ? verticalCompactor : noCompactor}
-                                                    style={contentMinHeight > 0 ? { minHeight: contentMinHeight } : undefined}
-                                                    onLayoutChange={handleLayoutChange}
+                                                    compactor={rglCompactor}
+                                                    style={rglMinHeightStyle}
+                                                    onDragStop={handleDragStop}
+                                                    onResizeStop={handleResizeStop}
                                                     onDrop={handleDrop}
                                                     onDropDragOver={handleDropDragOver}
                                                 >

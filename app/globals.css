@@ -257,11 +257,7 @@
 
 /* Strip chart component's own card wrapper inside builder —
    card-inner already provides border/bg/rounded/shadow */
-.card-inner > * {
-  height: 100% !important;
-}
 .card-inner > * > * {
-  height: 100% !important;
   border-color: transparent !important;
   background: transparent !important;
   border-radius: 0 !important;

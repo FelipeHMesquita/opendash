@@ -388,10 +388,15 @@ function getDescendantIds(pages: Page[], pageId: PageId): PageId[] {
 // ─── Reducer ──────────────────────────────────────────────────────────────────
 
 function updateActivePage(state: BuilderState, updater: (page: Page) => Page): BuilderState {
-    return {
-        ...state,
-        pages: state.pages.map(p => p.id === state.activePageId ? updater(p) : p),
-    }
+    let changed = false
+    const newPages = state.pages.map(p => {
+        if (p.id !== state.activePageId) return p
+        const updated = updater(p)
+        if (updated !== p) changed = true
+        return updated
+    })
+    if (!changed) return state
+    return { ...state, pages: newPages }
 }
 
 export type BuilderAction =
@@ -519,14 +524,17 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
         case "SET_ITEMS":
             return updateActivePage(state, page => ({ ...page, canvasItems: action.items }))
         case "UPDATE_LAYOUT":
-            return updateActivePage(state, page => ({
-                ...page,
-                canvasItems: page.canvasItems.map(item => {
+            return updateActivePage(state, page => {
+                let changed = false
+                const next = page.canvasItems.map(item => {
                     const l = action.layout.find(li => li.i === item.instanceId)
                     if (!l) return item
+                    if (item.x === l.x && item.y === l.y && item.w === l.w && item.h === l.h) return item
+                    changed = true
                     return { ...item, x: l.x, y: l.y, w: l.w, h: l.h }
-                }),
-            }))
+                })
+                return changed ? { ...page, canvasItems: next } : page
+            })
 
         // ── Canvas item link ────────────────────────────────────────────────
         case "LINK_ITEM":
