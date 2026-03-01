@@ -1,7 +1,13 @@
 import * as React from "react"
 import { TrendingUp, TrendingDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { StatCardConfig } from "@/app/_builder-state"
+type StatCardConfig = {
+    title: string
+    value: string
+    change: string
+    positive: boolean
+    description: string
+}
 
 // ─── Primitive ────────────────────────────────────────────────────────────────
 

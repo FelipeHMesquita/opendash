@@ -4,7 +4,8 @@ import * as React from "react"
 import { Plus, MoreHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import type { KanbanConfig, KanbanColumn } from "@/app/_builder-state"
+type KanbanColumn = { id: string; title: string; color: string }
+type KanbanConfig = { columns: KanbanColumn[] }
 
 // ─── Color mapping ──────────────────────────────────────────────────────────
 

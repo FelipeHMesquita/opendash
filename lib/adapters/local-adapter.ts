@@ -259,7 +259,7 @@ export class LocalDataAdapter implements DataAdapter {
         const dashboards = read<Record<string, Dashboard>>(KEYS.dashboards, {})
         dashboards[dashId] = {
             id: dashId, projectId: id, name: "Dashboard",
-            data: { builder: { pages: [], activePageId: "", navbarItems: [], sidebarItems: [], rightSidebarItems: [] }, ui: {} as DashboardData["ui"] },
+            data: { builder: { pages: [], activePageId: "" }, ui: {} as DashboardData["ui"] },
             createdAt: ts, updatedAt: ts,
         }
         write(KEYS.dashboards, dashboards)
@@ -311,7 +311,7 @@ export class LocalDataAdapter implements DataAdapter {
         const ts = now()
         const dash: Dashboard = {
             id, projectId, name,
-            data: data ?? { builder: { pages: [], activePageId: "", navbarItems: [], sidebarItems: [], rightSidebarItems: [] }, ui: {} as DashboardData["ui"] },
+            data: data ?? { builder: { pages: [], activePageId: "" }, ui: {} as DashboardData["ui"] },
             createdAt: ts, updatedAt: ts,
         }
         const all = read<Record<string, Dashboard>>(KEYS.dashboards, {})
@@ -328,7 +328,7 @@ export class LocalDataAdapter implements DataAdapter {
             const ts = now()
             dash = {
                 id, projectId: "", name: patch.name ?? "Dashboard",
-                data: patch.data ?? { builder: { pages: [], activePageId: "", navbarItems: [], sidebarItems: [], rightSidebarItems: [] }, ui: {} as DashboardData["ui"] },
+                data: patch.data ?? { builder: { pages: [], activePageId: "" }, ui: {} as DashboardData["ui"] },
                 createdAt: ts, updatedAt: ts,
             }
         }

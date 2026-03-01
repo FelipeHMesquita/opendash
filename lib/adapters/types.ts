@@ -37,10 +37,10 @@ export interface DashboardData {
     builder: BuilderState
     ui: {
         activeTheme: string
-        showNavbar: boolean
-        showSidebar: boolean
-        mockSidebarOpen: boolean
-        mockSidebarWidth: number
+        showNavbar?: boolean
+        showSidebar?: boolean
+        mockSidebarOpen?: boolean
+        mockSidebarWidth?: number
         showRightSidebar?: boolean
         mockRightSidebarOpen?: boolean
         mockRightSidebarWidth?: number
@@ -50,6 +50,7 @@ export interface DashboardData {
         deviceId: string
         useCompactor?: boolean
         contentMinHeight?: number
+        contentWidth?: number
     }
 }
 

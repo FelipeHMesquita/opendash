@@ -5,7 +5,20 @@ import { Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { LoginConfig } from "@/app/_builder-state"
+type LoginConfig = {
+    heading: string
+    subtext: string
+    subtextLink: string
+    emailLabel: string
+    passwordLabel: string
+    forgotLabel: string
+    submitLabel: string
+    googleLabel: string
+    submitLinkPageId?: string | null
+    googleLinkPageId?: string | null
+    subtextLinkPageId?: string | null
+    forgotLinkPageId?: string | null
+}
 
 type LoginPageProps = {
     config?: LoginConfig

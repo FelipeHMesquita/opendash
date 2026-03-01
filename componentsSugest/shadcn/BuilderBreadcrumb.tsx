@@ -16,13 +16,8 @@ import type { Page, PageId } from "@/app/_builder-state"
 // ── Compute ancestor chain from flat pages array ─────────────────────────────
 
 function getAncestorChain(pages: Page[], pageId: PageId): { id: PageId; label: string }[] {
-    const chain: { id: PageId; label: string }[] = []
-    let cur: Page | undefined = pages.find(p => p.id === pageId)
-    while (cur) {
-        chain.unshift({ id: cur.id, label: cur.label })
-        cur = cur.parentId ? pages.find(p => p.id === cur!.parentId) : undefined
-    }
-    return chain
+    const cur = pages.find(p => p.id === pageId)
+    return cur ? [{ id: cur.id, label: cur.label }] : []
 }
 
 // ── Fallback for styleguide (no context) ─────────────────────────────────────

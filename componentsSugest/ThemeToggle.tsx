@@ -3,7 +3,9 @@
 import * as React from "react"
 import { Sun, Moon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { ThemeToggleConfig } from "@/app/_builder-state"
+type ThemeToggleConfig = {
+    size: "sm" | "default" | "lg"
+}
 
 type ThemeToggleProps = {
     config?: ThemeToggleConfig

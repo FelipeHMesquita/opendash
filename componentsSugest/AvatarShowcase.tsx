@@ -2,7 +2,13 @@
 
 import * as React from "react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import type { AvatarConfig } from "@/app/_builder-state"
+type AvatarConfig = {
+    name: string
+    role: string
+    size: "sm" | "default" | "lg"
+    showName: boolean
+    showRole: boolean
+}
 
 type AvatarShowcaseProps = {
     config?: AvatarConfig

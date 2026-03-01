@@ -1,7 +1,11 @@
 "use client"
 
 import * as React from "react"
-import type { CardShapeConfig } from "@/app/_builder-state"
+type CardShapeConfig = {
+    icon: string
+    title: string
+    description: string
+}
 import { icons } from "lucide-react"
 
 export function CardShapeElement({

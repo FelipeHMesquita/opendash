@@ -158,27 +158,3 @@ export const GLOBAL_CSS_VARS = {
     ],
 } as const
 
-// ─── Default Sidebar Icons ───────────────────────────────────────────────────
-
-export const DEFAULT_SIDEBAR_ICONS: Record<string, string> = {
-    "Início":      "House",
-    "Dashboard":   "BarChart2",
-    "Análises":    "LayoutGrid",
-    "Relatórios":  "Archive",
-    "Usuários":    "Users2",
-    "Produtos":    "Package",
-    "Config.":     "Settings",
-}
-
-export const DEFAULT_NAVBAR_ICONS: Record<string, string> = {
-    "Dashboard":   "LayoutDashboard",
-    "Relatórios":  "FileText",
-    "Vendas":      "ShoppingCart",
-    "Config":      "Settings",
-}
-
-// ─── Layout Constants ────────────────────────────────────────────────────────
-
-export const NAVBAR_HEIGHT_PX = 64
-export const SIDEBAR_DEFAULT_WIDTH_PX = 192
-export const SIDEBAR_COLLAPSED_WIDTH_PX = 56

@@ -2,7 +2,14 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import type { ContainerConfig } from "@/app/_builder-state"
+type ContainerConfig = {
+    title: string
+    bgColor: string
+    showBorder: boolean
+    borderRadius: number
+    showTitle: boolean
+    titleAlign: "start" | "center"
+}
 
 const BG_COLOR_MAP: Record<string, { bg: string; fg: string }> = {
     primary:     { bg: "bg-primary",     fg: "text-primary-foreground" },

@@ -2,7 +2,19 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import type { ShapeConfig } from "@/app/_builder-state"
+type ShapeConfig = {
+    icon: string
+    alignH: "start" | "center" | "end"
+    alignV: "start" | "center" | "end"
+    paddingTop: number
+    paddingRight: number
+    paddingBottom: number
+    paddingLeft: number
+    paddingLinked: boolean
+    bgColor: string
+    borderRadius: number
+    showBorder: boolean
+}
 import { icons } from "lucide-react"
 
 // Curated icon subset for the picker

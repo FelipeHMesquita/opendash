@@ -1,20 +1,13 @@
 // ─── Comprehensive export generator ──────────────────────────────────────────
-// Generates a complete design specification in Markdown format (8 sections).
+// Generates a complete design specification in Markdown format.
 
 import {
-    type Page, type NavItem, buildTree, DEVICE_PRESETS, RGL_COLS, RGL_ROW_HEIGHT, RGL_MARGIN,
-    isShapeItem, type ShapeConfig, isCardShapeItem, type CardShapeConfig,
-    isLoginItem, type LoginConfig, isSignUpItem, type SignUpConfig,
-    isStatCardItem, type StatCardConfig, isKanbanItem, type KanbanConfig,
-    isContainerItem, type ContainerConfig, isButtonItem, type ButtonConfig,
-    isAvatarItem, type AvatarConfig, isThemeToggleItem,
+    type Page, DEVICE_PRESETS, RGL_COLS, RGL_ROW_HEIGHT, RGL_MARGIN,
 } from "./_builder-state"
 import { themes, type ThemeName, ALL_THEMES } from "./styleguide/_themes"
 import {
     TYPOGRAPHY_TOKENS, SPACING_SCALE, RADIUS_TOKENS, SHADOW_TOKENS,
     CHART_COLOR_SEMANTICS, CHART_STYLING_TOKENS, GLOBAL_CSS_VARS,
-    DEFAULT_SIDEBAR_ICONS, DEFAULT_NAVBAR_ICONS,
-    NAVBAR_HEIGHT_PX,
 } from "./_export-tokens"
 import { COMPONENT_METADATA } from "./_component-metadata"
 
@@ -22,35 +15,9 @@ import { COMPONENT_METADATA } from "./_component-metadata"
 
 export interface ExportParams {
     pages: Page[]
-    navbarItems: NavItem[]
-    sidebarItems: NavItem[]
-    rightSidebarItems: NavItem[]
     themeName: string
     padV: number
     padH: number
-    showNavbar: boolean
-    showSidebar: boolean
-    mockSidebarWidth: number
-    mockSidebarOpen: boolean
-    showRightSidebar: boolean
-    mockRightSidebarWidth: number
-    mockRightSidebarOpen: boolean
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function slugify(label: string): string {
-    return label.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
-}
-
-function fullPath(page: Page, pages: Page[]): string {
-    const segments: string[] = []
-    let current: Page | undefined = page
-    while (current) {
-        segments.unshift(slugify(current.label))
-        current = pages.find(p => p.id === current!.parentId)
-    }
-    return "/" + segments.join("/")
 }
 
 // ─── Section 1: Tokens de Tema ───────────────────────────────────────────────
@@ -62,7 +29,6 @@ function generateThemeTokensSection(params: ExportParams): string {
     // 1.1 Cores
     lines.push("", "### 1.1 Cores (CSS Variables)")
 
-    // Theme-specific vars
     const themeVars = themeName !== "Custom" && (ALL_THEMES as string[]).includes(themeName)
         ? themes[themeName as Exclude<ThemeName, "Custom">] : null
 
@@ -77,7 +43,7 @@ function generateThemeTokensSection(params: ExportParams): string {
         lines.push("", `**Tema:** ${themeName} (custom — variáveis definidas pelo usuário)`)
     }
 
-    // Global vars (chart, sidebar, semantic, extra)
+    // Global vars
     lines.push("", "**Variáveis globais (não variam por tema):**")
     for (const [group, vars] of Object.entries(GLOBAL_CSS_VARS)) {
         lines.push(`", "#### ${group.charAt(0).toUpperCase() + group.slice(1)}`)
@@ -135,28 +101,8 @@ function generateThemeTokensSection(params: ExportParams): string {
 // ─── Section 2: Layout Global ────────────────────────────────────────────────
 
 function generateLayoutSection(params: ExportParams): string {
-    const { showNavbar, showSidebar, mockSidebarWidth, mockSidebarOpen, showRightSidebar, mockRightSidebarWidth, mockRightSidebarOpen, padV, padH } = params
+    const { padV, padH } = params
     const lines: string[] = ["## 2. Layout Global"]
-
-    lines.push("", "### Navbar")
-    lines.push(`- Visível: ${showNavbar ? "sim" : "não"}`)
-    if (showNavbar) lines.push(`- Altura: ${NAVBAR_HEIGHT_PX}px (h-16)`)
-
-    lines.push("", "### Sidebar (esquerda)")
-    lines.push(`- Visível: ${showSidebar ? "sim" : "não"}`)
-    if (showSidebar) {
-        lines.push(`- Largura: ${mockSidebarWidth}px`)
-        lines.push(`- Colapsável: sim`)
-        lines.push(`- Estado inicial: ${mockSidebarOpen ? "expandida" : "colapsada"}`)
-    }
-
-    lines.push("", "### Sidebar (direita)")
-    lines.push(`- Visível: ${showRightSidebar ? "sim" : "não"}`)
-    if (showRightSidebar) {
-        lines.push(`- Largura: ${mockRightSidebarWidth}px`)
-        lines.push(`- Colapsável: sim`)
-        lines.push(`- Estado inicial: ${mockRightSidebarOpen ? "expandida" : "colapsada"}`)
-    }
 
     lines.push("", "### Grid (react-grid-layout)")
     lines.push(`- Colunas: ${RGL_COLS}`)
@@ -170,190 +116,32 @@ function generateLayoutSection(params: ExportParams): string {
     lines.push(`- Tablet (768px): 12 colunas, componentes > 12col → full-width`)
     lines.push(`- Mobile (390px): 1 coluna, todos os componentes em stack vertical`)
 
-    // Per-page layout overrides
-    const overrides = params.pages.filter(p => p.layout && Object.keys(p.layout).length > 0)
-    if (overrides.length > 0) {
-        lines.push("", "### Overrides por nível")
-        for (const page of overrides) {
-            const path = fullPath(page, params.pages)
-            const fields = Object.entries(page.layout!).map(([k, v]) => {
-                if (Array.isArray(v)) return `${k}: ${v.length} itens`
-                return `${k}: ${v}`
-            })
-            lines.push(`- \`${path}\` → ${fields.join(", ")}`)
-        }
-    }
-
     return lines.join("\n")
 }
 
-// ─── Section 3: Sitemap e Rotas ──────────────────────────────────────────────
-
-function generateSitemapSection(params: ExportParams): string {
-    const { pages } = params
-    const lines: string[] = ["## 3. Sitemap e Rotas"]
-    const tree = buildTree(pages)
-
-    lines.push("")
-    lines.push("```")
-    function printTree(nodes: ReturnType<typeof buildTree>, indent = "") {
-        for (const node of nodes) {
-            const path = fullPath(node, pages)
-            lines.push(`${indent}${path} — ${node.label}`)
-            if (node.children.length > 0) printTree(node.children, indent + "  ")
-        }
-    }
-    printTree(tree)
-    lines.push("```")
-
-    if (pages.length > 1) {
-        lines.push("", "**Estrutura Next.js App Router:**")
-        lines.push("```")
-        for (const page of pages) {
-            const path = fullPath(page, pages)
-            lines.push(`app${path}/page.tsx`)
-        }
-        lines.push("```")
-    }
-
-    return lines.join("\n")
-}
-
-// ─── Section 4: Componentes por Página ───────────────────────────────────────
+// ─── Section 3: Componentes ─────────────────────────────────────────────────
 
 function generateComponentsSection(params: ExportParams): string {
     const { pages } = params
-    const lines: string[] = ["## 4. Componentes por Página"]
+    const lines: string[] = ["## 3. Componentes"]
 
-    pages.forEach(page => {
-        lines.push("", `### ${page.label}`)
+    if (pages.length === 0 || pages.every(p => p.canvasItems.length === 0)) {
+        lines.push("", "- (sem componentes)")
+        return lines.join("\n")
+    }
 
+    for (const page of pages) {
+        if (pages.length > 1) {
+            lines.push("", `### ${page.label}`)
+        }
         if (page.canvasItems.length === 0) {
-            lines.push("- (sem componentes)")
-            return
+            lines.push("", "- (sem componentes)")
+            continue
         }
 
         page.canvasItems.forEach((item, i) => {
             const heightPx = item.h * RGL_ROW_HEIGHT + (item.h - 1) * RGL_MARGIN[1]
             lines.push("", `#### ${i + 1}. ${item.name}`)
-
-            if (isShapeItem(item.chartId)) {
-                const cfg = item.config as ShapeConfig | undefined
-                lines.push(`- Tipo: **Shape** (forma com ícone)`)
-                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
-                if (cfg) {
-                    lines.push(`- Ícone: ${cfg.icon}`)
-                    lines.push(`- Alinhamento: ${cfg.alignV}/${cfg.alignH}`)
-                    lines.push(`- Fundo: ${cfg.bgColor}${cfg.showBorder ? " + borda" : ""}`)
-                    lines.push(`- Border-radius: ${cfg.borderRadius}px`)
-                    lines.push(`- Padding: ${cfg.paddingLinked ? `${cfg.paddingTop}px` : `${cfg.paddingTop}/${cfg.paddingRight}/${cfg.paddingBottom}/${cfg.paddingLeft}px`}`)
-                }
-                return
-            }
-
-            if (isCardShapeItem(item.chartId)) {
-                const cfg = item.config as CardShapeConfig | undefined
-                lines.push(`- Tipo: **Card Shape** (card com ícone + título + descrição)`)
-                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
-                if (cfg) {
-                    lines.push(`- Ícone: ${cfg.icon}`)
-                    lines.push(`- Título: "${cfg.title}"`)
-                    lines.push(`- Descrição: "${cfg.description}"`)
-                }
-                lines.push(`- Cores: tokens semânticos (bg-card, text-foreground, bg-primary/10)`)
-                return
-            }
-
-            if (isLoginItem(item.chartId)) {
-                const cfg = item.config as LoginConfig | undefined
-                lines.push(`- Tipo: **Login** (formulário de autenticação)`)
-                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
-                if (cfg) {
-                    lines.push(`- Título: "${cfg.heading}"`)
-                    lines.push(`- Botão principal: "${cfg.submitLabel}"`)
-                    lines.push(`- Botão Google: "${cfg.googleLabel}"`)
-                }
-                return
-            }
-
-            if (isSignUpItem(item.chartId)) {
-                const cfg = item.config as SignUpConfig | undefined
-                lines.push(`- Tipo: **Sign Up** (formulário de cadastro)`)
-                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
-                if (cfg) {
-                    lines.push(`- Título: "${cfg.heading}"`)
-                    lines.push(`- Botão principal: "${cfg.submitLabel}"`)
-                    lines.push(`- Botão Google: "${cfg.googleLabel}"`)
-                }
-                return
-            }
-
-            if (isStatCardItem(item.chartId)) {
-                const cfg = item.config as StatCardConfig | undefined
-                lines.push(`- Tipo: **Stat Card** (métrica individual)`)
-                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
-                if (cfg) {
-                    lines.push(`- Título: "${cfg.title}"`)
-                    lines.push(`- Valor: "${cfg.value}"`)
-                    lines.push(`- Variação: "${cfg.change}" (${cfg.positive ? "positivo" : "negativo"})`)
-                    lines.push(`- Descrição: "${cfg.description}"`)
-                }
-                return
-            }
-
-            if (isKanbanItem(item.chartId)) {
-                const cfg = item.config as KanbanConfig | undefined
-                lines.push(`- Tipo: **Kanban Board** (quadro de tarefas)`)
-                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
-                if (cfg) {
-                    lines.push(`- Colunas: ${cfg.columns.map(c => `"${c.title}" (${c.color})`).join(", ")}`)
-                }
-                return
-            }
-
-            if (isContainerItem(item.chartId)) {
-                const cfg = item.config as ContainerConfig | undefined
-                lines.push(`- Tipo: **Container** (agrupamento visual)`)
-                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
-                if (cfg) {
-                    lines.push(`- Título: "${cfg.title}" (${cfg.showTitle ? "visível" : "oculto"})`)
-                    lines.push(`- Fundo: ${cfg.bgColor}${cfg.showBorder ? " + borda" : ""}`)
-                    lines.push(`- Border-radius: ${cfg.borderRadius}px`)
-                }
-                return
-            }
-
-            if (isButtonItem(item.chartId)) {
-                const cfg = item.config as ButtonConfig | undefined
-                lines.push(`- Tipo: **Botão** (componente de ação)`)
-                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
-                if (cfg) {
-                    lines.push(`- Texto: "${cfg.label}"`)
-                    lines.push(`- Variante: ${cfg.variant}`)
-                    lines.push(`- Tamanho: ${cfg.size}`)
-                }
-                return
-            }
-
-            if (isAvatarItem(item.chartId)) {
-                const cfg = item.config as AvatarConfig | undefined
-                lines.push(`- Tipo: **Avatar** (perfil de usuário)`)
-                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
-                if (cfg) {
-                    lines.push(`- Nome: "${cfg.name}"`)
-                    lines.push(`- Cargo: "${cfg.role}"`)
-                    lines.push(`- Tamanho: ${cfg.size}`)
-                    lines.push(`- Exibir: nome=${cfg.showName}, cargo=${cfg.showRole}`)
-                }
-                return
-            }
-
-            if (isThemeToggleItem(item.chartId)) {
-                lines.push(`- Tipo: **Theme Toggle** (alternância dark/light)`)
-                lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (~${heightPx}px)`)
-                return
-            }
-
             lines.push(`- Import: \`${item.importStatement}\``)
             lines.push(`- Posição: (${item.x}, ${item.y}) — ${item.w}×${item.h} (${item.w}/${RGL_COLS} colunas, ~${heightPx}px)`)
             lines.push(`- Schema: \`${item.dataType}\``)
@@ -372,26 +160,26 @@ function generateComponentsSection(params: ExportParams): string {
                 lines.push(`- Features: ${meta.features.join(", ")}`)
             }
         })
-    })
+    }
 
     return lines.join("\n")
 }
 
-// ─── Section 5: Paleta dos Gráficos ─────────────────────────────────────────
+// ─── Section 4: Paleta dos Gráficos ─────────────────────────────────────────
 
 function generateChartPaletteSection(params: ExportParams): string {
     const { pages } = params
-    const lines: string[] = ["## 5. Paleta dos Gráficos"]
+    const lines: string[] = ["## 4. Paleta dos Gráficos"]
 
-    // 5.1 Cores das séries
-    lines.push("", "### 5.1 Cores das Séries")
+    // 4.1 Cores das séries
+    lines.push("", "### 4.1 Cores das Séries")
     lines.push("```css")
     for (const c of CHART_COLOR_SEMANTICS) {
         lines.push(`${c.variable}: ${c.lightValue}; /* ${c.label} — ${c.semantic} */`)
     }
     lines.push("```")
 
-    // 5.2 Mapeamento série→cor por componente
+    // 4.2 Mapeamento série→cor por componente
     const chartIds = new Set<string>()
     for (const page of pages) {
         for (const item of page.canvasItems) {
@@ -401,7 +189,7 @@ function generateChartPaletteSection(params: ExportParams): string {
     }
 
     if (chartIds.size > 0) {
-        lines.push("", "### 5.2 Mapeamento Série → Cor")
+        lines.push("", "### 4.2 Mapeamento Série → Cor")
         for (const chartId of chartIds) {
             const meta = COMPONENT_METADATA[chartId]!
             lines.push("", `**${chartId}:**`)
@@ -411,8 +199,8 @@ function generateChartPaletteSection(params: ExportParams): string {
         }
     }
 
-    // 5.3 Styling
-    lines.push("", "### 5.3 Estilo dos Gráficos")
+    // 4.3 Styling
+    lines.push("", "### 4.3 Estilo dos Gráficos")
     const st = CHART_STYLING_TOKENS
     lines.push(`- Eixo tick: cor ${st.axisTick.color}, tamanho ${st.axisTick.fontSize}`)
     lines.push(`- Eixo linha: cor ${st.axisLine.color}`)
@@ -423,8 +211,8 @@ function generateChartPaletteSection(params: ExportParams): string {
     lines.push(`- Legenda: dot ${st.legend.dotSize}, label ${st.legend.labelSize} ${st.legend.labelColor}, posição ${st.legend.position}`)
     lines.push(`- Animações: ${st.animations}`)
 
-    // 5.4 Gradientes
-    lines.push("", "### 5.4 Gradientes")
+    // 4.4 Gradientes
+    lines.push("", "### 4.4 Gradientes")
     const grad = st.gradients.area
     lines.push(`- Area chart: ${grad.type}`)
     for (const stop of grad.stops) {
@@ -434,75 +222,11 @@ function generateChartPaletteSection(params: ExportParams): string {
     return lines.join("\n")
 }
 
-// ─── Section 6: Navegação ────────────────────────────────────────────────────
-
-function generateNavigationSection(params: ExportParams): string {
-    const { navbarItems, sidebarItems, rightSidebarItems, pages, showNavbar, showSidebar, showRightSidebar } = params
-    const lines: string[] = ["## 6. Navegação"]
-
-    lines.push("", `- Biblioteca de ícones: **lucide-react**`)
-
-    // Navbar links
-    if (showNavbar) {
-        lines.push("", "### Navbar")
-        for (const item of navbarItems) {
-            const target = item.targetPageId ? pages.find(p => p.id === item.targetPageId) : null
-            const route = target ? fullPath(target, pages) : "(sem link)"
-            const icon = DEFAULT_NAVBAR_ICONS[item.label] ?? "—"
-            lines.push(`- "${item.label}" → ${route} | ícone: ${icon}`)
-        }
-    }
-
-    // Sidebar links
-    if (showSidebar) {
-        lines.push("", "### Sidebar (esquerda)")
-        for (const item of sidebarItems) {
-            const target = item.targetPageId ? pages.find(p => p.id === item.targetPageId) : null
-            const route = target ? fullPath(target, pages) : "(sem link)"
-            const icon = DEFAULT_SIDEBAR_ICONS[item.label] ?? "—"
-            lines.push(`- "${item.label}" → ${route} | ícone: ${icon}`)
-        }
-    }
-
-    // Right sidebar links
-    if (showRightSidebar) {
-        lines.push("", "### Sidebar (direita)")
-        for (const item of rightSidebarItems) {
-            const target = item.targetPageId ? pages.find(p => p.id === item.targetPageId) : null
-            const route = target ? fullPath(target, pages) : "(sem link)"
-            const icon = DEFAULT_SIDEBAR_ICONS[item.label] ?? "—"
-            lines.push(`- "${item.label}" → ${route} | ícone: ${icon}`)
-        }
-    }
-
-    // Per-page nav overrides
-    const navOverrides = pages.filter(p => p.layout?.navbarItems || p.layout?.sidebarItems || p.layout?.rightSidebarItems)
-    if (navOverrides.length > 0) {
-        lines.push("", "### Overrides de navegação por nível")
-        for (const page of navOverrides) {
-            const path = fullPath(page, pages)
-            lines.push("", `#### ${path}`)
-            for (const [field, label] of [["navbarItems", "Navbar"], ["sidebarItems", "Sidebar esq."], ["rightSidebarItems", "Sidebar dir."]] as const) {
-                const items = page.layout?.[field]
-                if (!items) continue
-                lines.push(`**${label}:**`)
-                for (const item of items) {
-                    const target = item.targetPageId ? pages.find(p => p.id === item.targetPageId) : null
-                    const route = target ? fullPath(target, pages) : "(sem link)"
-                    lines.push(`- "${item.label}" → ${route}`)
-                }
-            }
-        }
-    }
-
-    return lines.join("\n")
-}
-
-// ─── Section 7: Estados dos Componentes ──────────────────────────────────────
+// ─── Section 5: Estados dos Componentes ──────────────────────────────────────
 
 function generateComponentStatesSection(params: ExportParams): string {
     const { pages } = params
-    const lines: string[] = ["## 7. Estados dos Componentes"]
+    const lines: string[] = ["## 5. Estados dos Componentes"]
 
     // Padrão global
     lines.push("", "### Padrão Global")
@@ -535,24 +259,16 @@ function generateComponentStatesSection(params: ExportParams): string {
     return lines.join("\n")
 }
 
-// ─── Section 8: Assets ───────────────────────────────────────────────────────
+// ─── Section 6: Assets ───────────────────────────────────────────────────────
 
 function generateAssetsSection(params: ExportParams): string {
     const { pages } = params
-    const lines: string[] = ["## 8. Assets"]
-
-    // Logo
-    lines.push("", "### Logo")
-    lines.push("- Navbar: Placeholder (lucide-react `Waves` icon, cor: `var(--primary)`)")
-    lines.push("- Sidebar: Iniciais em badge circular (`bg-primary`, `text-primary-foreground`)")
-    lines.push("- Variantes claro/escuro: Herdam cores do tema automaticamente via CSS vars")
-    lines.push("- **Recomendação:** Substituir por SVG da marca em produção")
+    const lines: string[] = ["## 6. Assets"]
 
     // Ícones
     lines.push("", "### Ícones")
     lines.push("- Biblioteca: **lucide-react** (MIT license)")
 
-    // Collect unique icons from used components
     const allIcons = new Set<string>()
     for (const page of pages) {
         for (const item of page.canvasItems) {
@@ -571,21 +287,15 @@ function generateAssetsSection(params: ExportParams): string {
 // ─── Instructions ────────────────────────────────────────────────────────────
 
 function generateInstructions(params: ExportParams): string {
-    const { pages, navbarItems, sidebarItems, rightSidebarItems } = params
     const lines: string[] = ["## Instruções para Implementação"]
 
-    const hasLinks = navbarItems.some(i => i.targetPageId) || sidebarItems.some(i => i.targetPageId) || rightSidebarItems.some(i => i.targetPageId)
     lines.push("")
     lines.push("- Framework: **Next.js App Router** (TypeScript)")
-    lines.push("- Cada página é uma route em `app/`")
-    if (pages.length > 1) lines.push("- A hierarquia do sitemap define o nesting de routes")
-    if (hasLinks) lines.push("- Use o mapa de navegação (seção 6) para `<Link>` reais")
-    lines.push("- Substitua o mock data (seção 4) pelos dados reais da aplicação")
+    lines.push("- Substitua o mock data (seção 3) pelos dados reais da aplicação")
     lines.push("- Aplique as CSS variables do tema (seção 1) em `:root`")
     lines.push("- Use os tokens de espaçamento, tipografia e radius conforme documentado")
-    lines.push("- Para gráficos, use `recharts` com os tokens de estilo da seção 5")
-    lines.push("- Implemente os estados (loading/empty/error) conforme seção 7")
-    lines.push("- Substitua o logo placeholder por SVG da marca real")
+    lines.push("- Para gráficos, use `recharts` com os tokens de estilo da seção 4")
+    lines.push("- Implemente os estados (loading/empty/error) conforme seção 5")
 
     return lines.join("\n")
 }
@@ -599,10 +309,8 @@ export function generateExportText(params: ExportParams): string {
         "",
         generateThemeTokensSection(params),
         generateLayoutSection(params),
-        generateSitemapSection(params),
         generateComponentsSection(params),
         generateChartPaletteSection(params),
-        generateNavigationSection(params),
         generateComponentStatesSection(params),
         generateAssetsSection(params),
         generateInstructions(params),

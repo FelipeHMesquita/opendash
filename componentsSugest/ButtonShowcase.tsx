@@ -2,7 +2,12 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import type { ButtonConfig } from "@/app/_builder-state"
+type ButtonConfig = {
+    label: string
+    variant: "default" | "destructive" | "outline" | "secondary" | "ghost"
+    size: "default" | "sm" | "lg"
+    linkPageId?: string | null
+}
 
 type ButtonShowcaseProps = {
     config?: ButtonConfig
